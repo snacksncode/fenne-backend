@@ -10,14 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_12_224242) do
-  create_table "refresh_tokens", force: :cascade do |t|
+ActiveRecord::Schema[8.0].define(version: 2025_11_15_201927) do
+  create_table "families", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "session_tokens", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "token"
     t.datetime "expires_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["user_id"], name: "index_refresh_tokens_on_user_id"
+    t.index ["user_id"], name: "index_session_tokens_on_user_id"
   end
 
   create_table "todos", force: :cascade do |t|
@@ -35,8 +40,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_224242) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "family_id", null: false
+    t.index ["family_id"], name: "index_users_on_family_id"
   end
 
-  add_foreign_key "refresh_tokens", "users"
+  add_foreign_key "session_tokens", "users"
   add_foreign_key "todos", "users"
+  add_foreign_key "users", "families"
 end

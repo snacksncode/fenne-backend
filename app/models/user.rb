@@ -1,4 +1,10 @@
 class User < ApplicationRecord
+  before_validation do
+    self.family = Family.create! unless family
+  end
+
+  has_secure_password
   has_many :todos, dependent: :destroy
-  has_many :refresh_tokens, dependent: :destroy
+  has_many :session_tokens, dependent: :destroy
+  belongs_to :family
 end

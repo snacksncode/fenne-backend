@@ -1,6 +1,4 @@
 class TodosController < ApplicationController
-  skip_before_action :verify_authenticity_token
-
   def index
     render json: Todo.all
   end
@@ -26,11 +24,12 @@ class TodosController < ApplicationController
   end
 
   private
+
   def create_params
-    params.expect(todo: [ :content ])
+    params.expect(todo: [:content])
   end
 
   def update_params
-    params.expect(todo: [ :content, :is_completed ])
+    params.expect(todo: [:content, :is_completed])
   end
 end
