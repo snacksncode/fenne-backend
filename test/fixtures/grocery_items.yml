@@ -1,0 +1,29 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+smith_apple:
+  family: smith_family
+  name: Red Apples
+  quantity: 6
+  aisle: 0
+  unit: 2
+
+smith_milk:
+  family: smith_family
+  name: Whole Milk
+  quantity: 1
+  aisle: 2
+  unit: 3
+
+smith_chicken:
+  family: smith_family
+  name: Boneless Chicken Breast
+  quantity: 2
+  aisle: 3
+  unit: 11
+
+johnson_bread:
+  family: johnson_family
+  name: Whole Wheat Bread
+  quantity: 1
+  aisle: 1
+  unit: 12

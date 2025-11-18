@@ -7,4 +7,5 @@ class User < ApplicationRecord
   has_many :todos, dependent: :destroy
   has_many :session_tokens, dependent: :destroy
   belongs_to :family
+  validates :email, uniqueness: true
 end

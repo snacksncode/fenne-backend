@@ -1,0 +1,16 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+john_token_one:
+  user: john_smith
+  token: <%= SecureRandom.hex(32) %>
+  expires_at: <%= 90.days.from_now %>
+
+jane_token_one:
+  user: jane_smith
+  token: <%= SecureRandom.hex(32) %>
+  expires_at: <%= 90.days.from_now %>
+
+bob_token_one:
+  user: bob_johnson
+  token: <%= SecureRandom.hex(32) %>
+  expires_at: <%= 90.days.from_now %>

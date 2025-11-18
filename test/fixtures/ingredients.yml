@@ -1,0 +1,43 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+pasta_carbonara_pasta:
+  recipe: pasta_carbonara
+  name: Spaghetti
+  quantity: 400
+  unit: 0
+
+pasta_carbonara_eggs:
+  recipe: pasta_carbonara
+  name: Eggs
+  quantity: 3
+  unit: 12
+
+pasta_carbonara_bacon:
+  recipe: pasta_carbonara
+  name: Bacon
+  quantity: 200
+  unit: 0
+
+scrambled_eggs_eggs:
+  recipe: scrambled_eggs
+  name: Eggs
+  quantity: 2
+  unit: 12
+
+scrambled_eggs_butter:
+  recipe: scrambled_eggs
+  name: Butter
+  quantity: 1
+  unit: 6
+
+grilled_salmon_salmon:
+  recipe: grilled_salmon
+  name: Salmon Fillet
+  quantity: 200
+  unit: 0
+
+grilled_salmon_lemon:
+  recipe: grilled_salmon
+  name: Lemon
+  quantity: 1
+  unit: 12

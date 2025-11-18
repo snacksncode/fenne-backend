@@ -2,6 +2,7 @@ class ApplicationController < ActionController::Base
   before_action :authenticate_request!
   skip_before_action :verify_authenticity_token
   wrap_parameters false
+  rescue_from ActiveRecord::RecordNotFound, with: :not_found!
 
   def authenticate_request!
     token = extract_token_from_authorization_header
@@ -13,6 +14,10 @@ class ApplicationController < ActionController::Base
 
   def unauthorized!
     render json: {error: "Unauthorized"}, status: :unauthorized
+  end
+
+  def not_found!
+    render json: {error: "Not found"}, status: :not_found
   end
 
   rescue_from ActionController::ParameterMissing do |exception|

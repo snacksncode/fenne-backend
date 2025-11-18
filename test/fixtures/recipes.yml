@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+pasta_carbonara:
+  name: Pasta Carbonara
+  meal_types_bitmask: 2
+
+scrambled_eggs:
+  name: Scrambled Eggs
+  meal_types_bitmask: 1
+
+grilled_salmon:
+  name: Grilled Salmon
+  meal_types_bitmask: 4

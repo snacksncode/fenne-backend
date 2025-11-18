@@ -1,6 +1,6 @@
 require "test_helper"
 
-class TodosControllerTest < ActionDispatch::IntegrationTest
+class RecipeTest < ActiveSupport::TestCase
   # test "the truth" do
   #   assert true
   # end

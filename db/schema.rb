@@ -10,8 +10,36 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_15_201927) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_17_225451) do
   create_table "families", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "grocery_items", force: :cascade do |t|
+    t.integer "family_id", null: false
+    t.string "name", null: false
+    t.decimal "quantity", null: false
+    t.integer "aisle", null: false
+    t.integer "unit", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["family_id"], name: "index_grocery_items_on_family_id"
+  end
+
+  create_table "ingredients", force: :cascade do |t|
+    t.integer "recipe_id", null: false
+    t.string "name", null: false
+    t.integer "unit", null: false
+    t.decimal "quantity", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["recipe_id"], name: "index_ingredients_on_recipe_id"
+  end
+
+  create_table "recipes", force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "meal_types_bitmask", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -44,6 +72,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_201927) do
     t.index ["family_id"], name: "index_users_on_family_id"
   end
 
+  add_foreign_key "grocery_items", "families"
+  add_foreign_key "ingredients", "recipes"
   add_foreign_key "session_tokens", "users"
   add_foreign_key "todos", "users"
   add_foreign_key "users", "families"
