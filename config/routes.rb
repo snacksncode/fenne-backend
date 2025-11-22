@@ -12,11 +12,11 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
 
-
   post "/login", controller: "auth", action: :login
   post "/logout", controller: "auth", action: :logout
 
   resources :grocery_items
+  resources :recipes
 
   mount ActionCable.server => "/cable"
 end

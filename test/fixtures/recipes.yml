@@ -3,11 +3,14 @@
 pasta_carbonara:
   name: Pasta Carbonara
   meal_types_bitmask: 2
+  family: smith_family
 
 scrambled_eggs:
   name: Scrambled Eggs
   meal_types_bitmask: 1
+  family: smith_family
 
 grilled_salmon:
   name: Grilled Salmon
   meal_types_bitmask: 4
+  family: johnson_family

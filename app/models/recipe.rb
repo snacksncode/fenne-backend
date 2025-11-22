@@ -1,4 +1,5 @@
 class Recipe < ApplicationRecord
+  belongs_to :family
   has_many :ingredients, dependent: :destroy
 
   MEAL_TYPES = {breakfast: 1, lunch: 2, dinner: 4}
@@ -12,7 +13,7 @@ class Recipe < ApplicationRecord
     self.meal_types_bitmask = types.map { |t| MEAL_TYPES[t.to_sym] }.compact.sum
   end
 
-  validates :name, :meal_types_bitmask, presence: true
+  validates :name, :meal_types, presence: true
   validates :meal_types_bitmask, numericality: {
     greater_than_or_equal_to: 0,
     less_than_or_equal_to: 7

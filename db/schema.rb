@@ -38,10 +38,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_225451) do
   end
 
   create_table "recipes", force: :cascade do |t|
+    t.integer "family_id", null: false
     t.string "name", null: false
     t.integer "meal_types_bitmask", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["family_id"], name: "index_recipes_on_family_id"
   end
 
   create_table "session_tokens", force: :cascade do |t|
@@ -74,6 +76,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_225451) do
 
   add_foreign_key "grocery_items", "families"
   add_foreign_key "ingredients", "recipes"
+  add_foreign_key "recipes", "families"
   add_foreign_key "session_tokens", "users"
   add_foreign_key "todos", "users"
   add_foreign_key "users", "families"

@@ -1,6 +1,6 @@
-class CreateRefreshTokens < ActiveRecord::Migration[8.0]
+class CreateSessionTokens < ActiveRecord::Migration[8.0]
   def change
-    create_table :refresh_tokens do |t|
+    create_table :session_tokens do |t|
       t.references :user, null: false, foreign_key: true
       t.string :token
       t.datetime :expires_at
