@@ -1,43 +1,53 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
+# Smith Family - Pasta Carbonara Ingredients
 pasta_carbonara_pasta:
-  recipe: pasta_carbonara
+  recipe: pasta_carbonara_smith
   name: Spaghetti
   quantity: 400
   unit: 0
 
 pasta_carbonara_eggs:
-  recipe: pasta_carbonara
+  recipe: pasta_carbonara_smith
   name: Eggs
   quantity: 3
   unit: 12
 
-pasta_carbonara_bacon:
-  recipe: pasta_carbonara
-  name: Bacon
-  quantity: 200
-  unit: 0
-
+# Smith Family - Scrambled Eggs Ingredients
 scrambled_eggs_eggs:
-  recipe: scrambled_eggs
+  recipe: scrambled_eggs_smith
   name: Eggs
   quantity: 2
   unit: 12
 
 scrambled_eggs_butter:
-  recipe: scrambled_eggs
+  recipe: scrambled_eggs_smith
   name: Butter
   quantity: 1
   unit: 6
 
+# Johnson Family - Grilled Salmon Ingredients
 grilled_salmon_salmon:
-  recipe: grilled_salmon
+  recipe: grilled_salmon_johnson
   name: Salmon Fillet
   quantity: 200
   unit: 0
 
 grilled_salmon_lemon:
-  recipe: grilled_salmon
+  recipe: grilled_salmon_johnson
   name: Lemon
   quantity: 1
   unit: 12
+
+# Johnson Family - Beef Steak Ingredients
+beef_steak_beef:
+  recipe: beef_steak_johnson
+  name: Beef
+  quantity: 300
+  unit: 0
+
+beef_steak_salt:
+  recipe: beef_steak_johnson
+  name: Salt
+  quantity: 1
+  unit: 13

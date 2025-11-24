@@ -18,5 +18,9 @@ Rails.application.routes.draw do
   resources :grocery_items
   resources :recipes
 
+  get "/schedule", to: "schedule#index"
+  post "/schedule", to: "schedule#create"
+  patch "/schedule/:date", to: "schedule#update"
+
   mount ActionCable.server => "/cable"
 end

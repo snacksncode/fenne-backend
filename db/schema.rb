@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_17_225451) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_23_123623) do
   create_table "families", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -46,6 +46,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_225451) do
     t.index ["family_id"], name: "index_recipes_on_family_id"
   end
 
+  create_table "schedule_days", force: :cascade do |t|
+    t.integer "family_id", null: false
+    t.date "date", null: false
+    t.integer "breakfast_recipe_id"
+    t.integer "lunch_recipe_id"
+    t.integer "dinner_recipe_id"
+    t.boolean "is_shopping_day", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["breakfast_recipe_id"], name: "index_schedule_days_on_breakfast_recipe_id"
+    t.index ["dinner_recipe_id"], name: "index_schedule_days_on_dinner_recipe_id"
+    t.index ["family_id", "date"], name: "index_schedule_days_on_family_id_and_date", unique: true
+    t.index ["family_id"], name: "index_schedule_days_on_family_id"
+    t.index ["lunch_recipe_id"], name: "index_schedule_days_on_lunch_recipe_id"
+  end
+
   create_table "session_tokens", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "token"
@@ -77,6 +93,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_225451) do
   add_foreign_key "grocery_items", "families"
   add_foreign_key "ingredients", "recipes"
   add_foreign_key "recipes", "families"
+  add_foreign_key "schedule_days", "families"
+  add_foreign_key "schedule_days", "recipes", column: "breakfast_recipe_id"
+  add_foreign_key "schedule_days", "recipes", column: "dinner_recipe_id"
+  add_foreign_key "schedule_days", "recipes", column: "lunch_recipe_id"
   add_foreign_key "session_tokens", "users"
   add_foreign_key "todos", "users"
   add_foreign_key "users", "families"

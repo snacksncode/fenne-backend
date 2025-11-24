@@ -1,5 +1,6 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
+# Smith Family
 john_smith:
   email: john@smith.com
   password_digest: <%= BCrypt::Password.create('test1234') %>
@@ -12,8 +13,15 @@ jane_smith:
   name: Jane Smith
   family: smith_family
 
+# Johnson Family
 bob_johnson:
   email: bob@johnson.com
   password_digest: <%= BCrypt::Password.create('test1234') %>
   name: Bob Johnson
+  family: johnson_family
+
+alice_johnson:
+  email: alice@johnson.com
+  password_digest: <%= BCrypt::Password.create('test1234') %>
+  name: Alice Johnson
   family: johnson_family

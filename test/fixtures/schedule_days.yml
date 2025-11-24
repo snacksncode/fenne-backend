@@ -1,0 +1,31 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+# Smith Family - Schedule Days (relative to today)
+smith_tomorrow_full:
+  family: smith_family
+  date: <%= Date.tomorrow %>
+  breakfast_recipe: scrambled_eggs_smith
+  lunch_recipe: pasta_carbonara_smith
+  dinner_recipe: scrambled_eggs_smith
+  is_shopping_day: false
+
+smith_tomorrow_plus_one_partial:
+  family: smith_family
+  date: <%= Date.tomorrow + 1.day %>
+  lunch_recipe: pasta_carbonara_smith
+  is_shopping_day: false
+
+# Johnson Family - Schedule Days (relative to today)
+johnson_tomorrow_full:
+  family: johnson_family
+  date: <%= Date.tomorrow %>
+  breakfast_recipe: beef_steak_johnson
+  lunch_recipe: grilled_salmon_johnson
+  dinner_recipe: beef_steak_johnson
+  is_shopping_day: false
+
+johnson_tomorrow_plus_one_partial:
+  family: johnson_family
+  date: <%= Date.tomorrow + 1.day %>
+  breakfast_recipe: grilled_salmon_johnson
+  is_shopping_day: false
