@@ -18,22 +18,13 @@ class ScheduleController < ApplicationController
     render json: ScheduleDaySerializer.render_many(schedule)
   end
 
-  def create
-    schedule_day = @current_user.family.schedule_days.new(schedule_day_params)
-
-    if schedule_day.save
-      render json: ScheduleDaySerializer.render(schedule_day), status: :created
-    else
-      render json: schedule_day.errors, status: :unprocessable_content
-    end
-  end
-
-  def update
+  def upsert
     date = parse_iso!(params[:date])
-    schedule_day = @current_user.family.schedule_days.find_by!(date:)
+    schedule_day = @current_user.family.schedule_days.find_or_create_by(date:)
 
     if schedule_day.update(schedule_day_params)
-      render json: ScheduleDaySerializer.render(schedule_day)
+      QueryInvalidator.broadcast(:schedules, {date:})
+      render json: ScheduleDaySerializer.render(schedule_day), status: :ok
     else
       render json: schedule_day.errors, status: :unprocessable_content
     end

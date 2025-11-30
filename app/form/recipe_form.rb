@@ -1,24 +1,28 @@
 class RecipeForm
   include ActiveModel::Model
 
-  attr_accessor :id, :name, :meal_types, :ingredients, :family
+  attr_accessor :id, :name, :meal_types, :ingredients, :family, :liked, :time_in_minutes
 
-  validates :name, :meal_types, :family, :ingredients, presence: true
-  validate :validate_ingredients
+  validates :name, :meal_types, :family, :ingredients, :time_in_minutes, presence: true, unless: :updating?
+  validate :validate_ingredients, unless: :updating?
 
   def save
     return false if invalid?
 
     ActiveRecord::Base.transaction do
       recipe = find_or_initialize_recipe
-      recipe.name = name
-      recipe.meal_types = meal_types
+      recipe.name = name if name.present?
+      recipe.meal_types = meal_types if meal_types.present?
+      recipe.liked = liked unless liked.nil?
+      recipe.time_in_minutes = time_in_minutes if time_in_minutes.present?
       recipe.save!
       self.id = recipe.id
 
-      recipe.ingredients.destroy_all
-      ingredients.map do |ingredient_attributes|
-        recipe.ingredients.create!(ingredient_attributes)
+      if ingredients.present?
+        recipe.ingredients.destroy_all
+        ingredients.map do |ingredient_attributes|
+          recipe.ingredients.create!(ingredient_attributes)
+        end
       end
 
       true
@@ -29,6 +33,10 @@ class RecipeForm
   end
 
   private
+
+  def updating?
+    id.present?
+  end
 
   def find_or_initialize_recipe
     if id.present?

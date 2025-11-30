@@ -1,11 +1,8 @@
 class QueryInvalidator
-  def self.broadcast(query_key)
+  def self.broadcast(resource, data = nil)
     ActionCable.server.broadcast(
       "invalidation_stream",
-      {
-        action: "invalidate",
-        query_key: query_key
-      }
+      {resource:, data:}
     )
   end
 end

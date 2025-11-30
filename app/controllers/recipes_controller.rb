@@ -10,7 +10,9 @@ class RecipesController < ApplicationController
   end
 
   def destroy
-    @current_user.family.recipes.find(params[:id]).destroy
+    recipe = @current_user.family.recipes.find(params[:id])
+    QueryInvalidator.broadcast(:recipes)
+    recipe.destroy
   end
 
   def create
@@ -18,6 +20,7 @@ class RecipesController < ApplicationController
     form = RecipeForm.new(recipe_params.merge(family:))
     if form.save
       recipe = family.recipes.find(form.id)
+      QueryInvalidator.broadcast(:recipes)
       render json: RecipeSerializer.render(recipe)
     else
       render json: form.errors
@@ -29,9 +32,10 @@ class RecipesController < ApplicationController
     form = RecipeForm.new(recipe_params.merge(id: params[:id], family:))
     if form.save
       recipe = family.recipes.find(form.id)
+      QueryInvalidator.broadcast(:recipes)
       render json: RecipeSerializer.render(recipe)
     else
-      render json: recipe.errors, status: :unprocessable_content
+      render json: form.errors, status: :unprocessable_content
     end
   end
 
@@ -40,6 +44,8 @@ class RecipesController < ApplicationController
   def recipe_params
     params.expect(data: [
       :name,
+      :liked,
+      :time_in_minutes,
       meal_types: [],
       ingredients: [[:name, :unit, :quantity]]
     ])

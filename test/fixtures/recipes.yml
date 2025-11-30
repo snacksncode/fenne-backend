@@ -4,20 +4,28 @@
 pasta_carbonara_smith:
   name: Pasta Carbonara
   meal_types_bitmask: 2
+  liked: true
+  time_in_minutes: 30
   family: smith_family
 
 scrambled_eggs_smith:
   name: Scrambled Eggs
   meal_types_bitmask: 1
+  liked: false
+  time_in_minutes: 45
   family: smith_family
 
 # Johnson Family Recipes
 grilled_salmon_johnson:
   name: Grilled Salmon
   meal_types_bitmask: 4
+  liked: true
+  time_in_minutes: 90
   family: johnson_family
 
 beef_steak_johnson:
   name: Beef Steak
   meal_types_bitmask: 2
+  liked: false
+  time_in_minutes: 60
   family: johnson_family

@@ -20,7 +20,7 @@ Rails.application.routes.draw do
 
   get "/schedule", to: "schedule#index"
   post "/schedule", to: "schedule#create"
-  patch "/schedule/:date", to: "schedule#update"
+  put "/schedule/:date", to: "schedule#upsert"
 
   mount ActionCable.server => "/cable"
 end
