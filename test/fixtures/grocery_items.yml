@@ -6,6 +6,7 @@ smith_apple:
   quantity: 6
   aisle: 0
   unit: 2
+  status: pending
 
 smith_milk:
   family: smith_family
@@ -13,6 +14,7 @@ smith_milk:
   quantity: 1
   aisle: 2
   unit: 3
+  status: completed
 
 smith_chicken:
   family: smith_family
@@ -20,6 +22,7 @@ smith_chicken:
   quantity: 2
   aisle: 3
   unit: 11
+  status: pending
 
 johnson_bread:
   family: johnson_family
@@ -27,3 +30,4 @@ johnson_bread:
   quantity: 1
   aisle: 1
   unit: 12
+  status: completed

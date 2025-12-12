@@ -8,6 +8,8 @@ class GroceryItem < ApplicationRecord
     personal_care: 12, pet_supplies: 13, other: 14
   }, prefix: true
 
+  enum :status, {pending: 0, completed: 1}, prefix: true
+
   include UnitEnum
 
   validates :name, :quantity, :aisle, :unit, presence: true

@@ -7,6 +7,14 @@ class SessionToken < ApplicationRecord
     expires_at < Time.current
   end
 
+  def needs_refresh?
+    expires_at < 60.days.from_now
+  end
+
+  def refresh!
+    update!(expires_at: 90.days.from_now)
+  end
+
   private
 
   def generate_token

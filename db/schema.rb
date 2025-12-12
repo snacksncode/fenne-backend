@@ -10,10 +10,21 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_27_212353) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_08_100635) do
   create_table "families", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "family_invitations", force: :cascade do |t|
+    t.integer "family_id", null: false
+    t.integer "from_user_id", null: false
+    t.integer "to_user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["family_id"], name: "index_family_invitations_on_family_id"
+    t.index ["from_user_id"], name: "index_family_invitations_on_from_user_id"
+    t.index ["to_user_id"], name: "index_family_invitations_on_to_user_id"
   end
 
   create_table "grocery_items", force: :cascade do |t|
@@ -24,6 +35,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_27_212353) do
     t.integer "unit", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "status", default: 0, null: false
     t.index ["family_id"], name: "index_grocery_items_on_family_id"
   end
 
@@ -85,13 +97,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_27_212353) do
   create_table "users", force: :cascade do |t|
     t.string "email"
     t.string "password_digest"
-    t.string "name"
+    t.string "name", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "family_id", null: false
     t.index ["family_id"], name: "index_users_on_family_id"
   end
 
+  add_foreign_key "family_invitations", "families"
+  add_foreign_key "family_invitations", "users", column: "from_user_id"
+  add_foreign_key "family_invitations", "users", column: "to_user_id"
   add_foreign_key "grocery_items", "families"
   add_foreign_key "ingredients", "recipes"
   add_foreign_key "recipes", "families"

@@ -11,7 +11,7 @@ class RecipesController < ApplicationController
 
   def destroy
     recipe = @current_user.family.recipes.find(params[:id])
-    QueryInvalidator.broadcast(:recipes)
+    invalidate_recipe!(recipe)
     recipe.destroy
   end
 
@@ -20,7 +20,7 @@ class RecipesController < ApplicationController
     form = RecipeForm.new(recipe_params.merge(family:))
     if form.save
       recipe = family.recipes.find(form.id)
-      QueryInvalidator.broadcast(:recipes)
+      invalidate_recipe!(recipe)
       render json: RecipeSerializer.render(recipe)
     else
       render json: form.errors
@@ -32,7 +32,7 @@ class RecipesController < ApplicationController
     form = RecipeForm.new(recipe_params.merge(id: params[:id], family:))
     if form.save
       recipe = family.recipes.find(form.id)
-      QueryInvalidator.broadcast(:recipes)
+      invalidate_recipe!(recipe)
       render json: RecipeSerializer.render(recipe)
     else
       render json: form.errors, status: :unprocessable_content
@@ -40,6 +40,15 @@ class RecipesController < ApplicationController
   end
 
   private
+
+  def invalidate_recipe!(recipe)
+    QueryInvalidator.broadcast(:recipes)
+    dates = ScheduleDay.where("breakfast_recipe_id = :id OR lunch_recipe_id = :id OR dinner_recipe_id = :id", id: recipe.id)
+      .pluck(:date).group_by { |d| [d.cwyear, d.cweek] }.values.map(&:first)
+      .sort_by { |d| (d - Date.today).abs }
+      .map(&:to_s)
+    QueryInvalidator.broadcast(:schedules, {dates:})
+  end
 
   def recipe_params
     params.expect(data: [

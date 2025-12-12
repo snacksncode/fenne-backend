@@ -23,7 +23,7 @@ class ScheduleController < ApplicationController
     schedule_day = @current_user.family.schedule_days.find_or_create_by(date:)
 
     if schedule_day.update(schedule_day_params)
-      QueryInvalidator.broadcast(:schedules, {date:})
+      QueryInvalidator.broadcast(:schedules, {dates: [date]})
       render json: ScheduleDaySerializer.render(schedule_day), status: :ok
     else
       render json: schedule_day.errors, status: :unprocessable_content

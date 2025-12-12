@@ -1,5 +1,5 @@
 class AuthController < ApplicationController
-  skip_before_action :authenticate_request!, only: [:login]
+  skip_before_action :authenticate_request!, only: [:login, :signup]
 
   def login
     email, password = login_params
@@ -11,6 +11,24 @@ class AuthController < ApplicationController
       status: :success,
       session_token: user.session_tokens.create!.token
     }
+  end
+
+  def me
+    render json: {
+      user: UserSerializer.render(@current_user),
+      family: FamilySerializer.render(@current_user.family)
+    }
+  end
+
+  def signup
+    email, password, name = signup_params
+    user = User.new(email:, password:, name:)
+
+    if user.save
+      return render json: {status: :success, session_token: user.session_tokens.create!.token}
+    end
+
+    render json: {error: user.errors.full_messages.first}, status: :unprocessable_content
   end
 
   def logout
@@ -26,6 +44,12 @@ class AuthController < ApplicationController
   end
 
   def login_params
-    params.expect(:email, :password)
+    email, password = params.expect(:email, :password)
+    [email.downcase, password]
+  end
+
+  def signup_params
+    email, password, name = params.expect(:email, :password, :name)
+    [email.downcase, password, name]
   end
 end

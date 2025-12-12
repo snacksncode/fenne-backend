@@ -1,0 +1,7 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+# Charlie invites Diana to join the Wilson family
+charlie_invites_diana:
+  family: wilson_family
+  from_user: charlie_wilson
+  to_user: diana_lee

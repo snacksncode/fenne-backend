@@ -14,3 +14,18 @@ bob_token_one:
   user: bob_johnson
   token: <%= SecureRandom.hex(32) %>
   expires_at: <%= 90.days.from_now %>
+
+alice_token_one:
+  user: alice_johnson
+  token: <%= SecureRandom.hex(32) %>
+  expires_at: <%= 90.days.from_now %>
+
+charlie_token_one:
+  user: charlie_wilson
+  token: <%= SecureRandom.hex(32) %>
+  expires_at: <%= 90.days.from_now %>
+
+diana_token_one:
+  user: diana_lee
+  token: <%= SecureRandom.hex(32) %>
+  expires_at: <%= 90.days.from_now %>

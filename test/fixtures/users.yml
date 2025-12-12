@@ -25,3 +25,17 @@ alice_johnson:
   password_digest: <%= BCrypt::Password.create('test1234') %>
   name: Alice Johnson
   family: johnson_family
+
+# Wilson Family (solo user)
+charlie_wilson:
+  email: charlie@wilson.com
+  password_digest: <%= BCrypt::Password.create('test1234') %>
+  name: Charlie Wilson
+  family: wilson_family
+
+# Lee Family (solo user)
+diana_lee:
+  email: diana@lee.com
+  password_digest: <%= BCrypt::Password.create('test1234') %>
+  name: Diana Lee
+  family: lee_family

@@ -12,15 +12,33 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
 
+  # auth
+  post "/signup", controller: "auth", action: :signup
   post "/login", controller: "auth", action: :login
   post "/logout", controller: "auth", action: :logout
+  get "/me", controller: "auth", action: :me
 
+  # grocery items
   resources :grocery_items
+  post "/grocery_items/checkout", to: "grocery_items#checkout"
+  post "/grocery_items/generate", to: "grocery_items#generate"
+
+  # recipes
   resources :recipes
 
+  # schedule
   get "/schedule", to: "schedule#index"
   post "/schedule", to: "schedule#create"
   put "/schedule/:date", to: "schedule#upsert"
 
+  # invitations
+  get "/invitations", to: "family_invitations#show"
+  post "/invitations", to: "family_invitations#invite"
+  post "/invitations/:invitation_id/accept", to: "family_invitations#accept"
+  post "/invitations/:invitation_id/decline", to: "family_invitations#decline"
+  delete "/invitations/:invitation_id", to: "family_invitations#destroy"
+  post "/leave_family", to: "family_invitations#leave"
+
+  # websockets
   mount ActionCable.server => "/cable"
 end
