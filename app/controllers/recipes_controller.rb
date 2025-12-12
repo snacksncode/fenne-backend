@@ -56,7 +56,7 @@ class RecipesController < ApplicationController
       :liked,
       :time_in_minutes,
       meal_types: [],
-      ingredients: [[:name, :unit, :quantity]]
+      ingredients: [[:name, :unit, :aisle, :quantity]]
     ])
   end
 end

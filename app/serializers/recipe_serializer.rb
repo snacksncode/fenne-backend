@@ -11,6 +11,7 @@ class RecipeSerializer
           id: ingredient.id,
           name: ingredient.name,
           unit: ingredient.unit,
+          aisle: ingredient.aisle,
           quantity: ingredient.quantity.to_f
         }
       end

@@ -13,9 +13,29 @@ class GroceryItemsController < ApplicationController
   end
 
   def generate
-    recipe_ids = @current_user.family.schedule_days.in_range(Date.today, 2.weeks.from_now)
-      .pluck(:breakfast_recipe_id, :lunch_recipe_id, :dinner_recipe_id).flatten.uniq.compact
-    ingredients = Ingredient.where(recipe_id: recipe_ids)
+    family = @current_user.family
+
+    shopping_day = family.schedule_days
+      .where(is_shopping_day: true)
+      .where("date >= ?", Date.today)
+      .order(:date)
+      .first
+
+    recipe_ids = family
+      .schedule_days
+      .in_range(Date.today, shopping_day ? shopping_day.date : 2.weeks.from_now.to_date)
+      .pluck(:breakfast_recipe_id, :lunch_recipe_id, :dinner_recipe_id)
+      .flatten.uniq.compact
+
+    Ingredient.where(recipe_id: recipe_ids).map do |ingredient|
+      family.grocery_items.create!(
+        name: ingredient.name,
+        quantity: ingredient.quantity,
+        aisle: ingredient.aisle,
+        unit: ingredient.unit
+      )
+    end
+
     render json: ingredients
   end
 
