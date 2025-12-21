@@ -64,4 +64,4 @@ group :test do
   gem "selenium-webdriver"
 end
 
-gem "standard", "~> 1.49"
+gem "standard", "~> 1.52"
