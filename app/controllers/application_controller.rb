@@ -1,4 +1,4 @@
-class ApplicationController < ActionController::Base
+class ApplicationController < ActionController::API
   before_action :authenticate_request!
   skip_before_action :verify_authenticity_token
   wrap_parameters false
