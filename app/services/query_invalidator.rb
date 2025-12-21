@@ -1,7 +1,7 @@
 class QueryInvalidator
-  def self.broadcast(resource, data = nil)
+  def self.broadcast(resource, family, data = nil)
     ActionCable.server.broadcast(
-      "invalidation_stream",
+      "family_invalidation_stream_#{family.id}",
       {resource:, data:}
     )
   end

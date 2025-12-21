@@ -13,10 +13,11 @@ Rails.application.routes.draw do
   # root "posts#index"
 
   # auth
-  post "/signup", controller: "auth", action: :signup
-  post "/login", controller: "auth", action: :login
-  post "/logout", controller: "auth", action: :logout
-  get "/me", controller: "auth", action: :me
+  post "/signup", to: "auth#signup"
+  post "/login", to: "auth#login"
+  post "/logout", to: "auth#logout"
+  post "/change_password", to: "auth#change_password"
+  get "/me", to: "auth#me"
 
   # grocery items
   resources :grocery_items

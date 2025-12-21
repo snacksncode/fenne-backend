@@ -20,6 +20,18 @@ class AuthController < ApplicationController
     }
   end
 
+  def change_password
+    current_password, new_password = password_params
+    return invalid_credentials! unless @current_user.authenticate(current_password)
+    @current_user.update!(password: new_password)
+    render json: {success: true}
+  end
+
+  # def change_details
+  #   will be used to update email and name
+  #   render json: {success: true}
+  # end
+
   def signup
     email, password, name = signup_params
     user = User.new(email:, password:, name:)
@@ -51,5 +63,9 @@ class AuthController < ApplicationController
   def signup_params
     email, password, name = params.expect(:email, :password, :name)
     [email.downcase, password, name]
+  end
+
+  def password_params
+    params.expect(:current_password, :new_password)
   end
 end
