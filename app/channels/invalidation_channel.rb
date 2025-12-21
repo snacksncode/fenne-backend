@@ -1,6 +1,6 @@
 class InvalidationChannel < ApplicationCable::Channel
   def subscribed
-    stream_from "invalidation_stream"
+    stream_from "family_invalidation_stream_#{user.family.id}"
   end
 
   def unsubscribed

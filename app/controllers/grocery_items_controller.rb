@@ -9,21 +9,18 @@ class GroceryItemsController < ApplicationController
 
   def destroy
     grocery_item.destroy
-    QueryInvalidator.broadcast(:grocery_items)
+    invalidate_groceries!
   end
 
   def generate
     family = @current_user.family
 
-    shopping_day = family.schedule_days
-      .where(is_shopping_day: true)
-      .where("date >= ?", Date.today)
-      .order(:date)
-      .first
+    start_date = parse_iso!(params.expect(:start))
+    end_date = parse_iso!(params.expect(:end))
 
     recipe_ids = family
       .schedule_days
-      .in_range(Date.today, shopping_day ? shopping_day.date : 2.weeks.from_now.to_date)
+      .in_range(start_date, end_date)
       .pluck(:breakfast_recipe_id, :lunch_recipe_id, :dinner_recipe_id)
       .flatten.uniq.compact
 
@@ -36,13 +33,13 @@ class GroceryItemsController < ApplicationController
       )
     end
 
-    render json: ingredients
+    render json: {success: true}
   end
 
   def create
     item = @current_user.family.grocery_items.new(grocery_item_params)
     if item.save
-      QueryInvalidator.broadcast(:grocery_items)
+      invalidate_groceries!
       return render json: GroceryItemSerializer.render(item), status: :created
     end
     render json: {error: item.errors.full_messages.first}, status: :unprocessable_content
@@ -53,7 +50,7 @@ class GroceryItemsController < ApplicationController
   def update
     item = grocery_item
     if item.update(grocery_item_params)
-      QueryInvalidator.broadcast(:grocery_items)
+      invalidate_groceries!
       return render json: GroceryItemSerializer.render(item), status: :ok
     end
     render json: {error: item.errors.full_messages.first}, status: :unprocessable_content
@@ -63,10 +60,20 @@ class GroceryItemsController < ApplicationController
 
   def checkout
     grocery_items.status_completed.destroy_all
-    QueryInvalidator.broadcast(:grocery_items)
+    invalidate_groceries!
   end
 
   private
+
+  def parse_iso!(date_string)
+    Date.iso8601(date_string)
+  rescue ArgumentError
+    raise ArgumentError, "Invalid date format. Use YYYY-MM-DD"
+  end
+
+  def invalidate_groceries!
+    QueryInvalidator.broadcast(:grocery_items, @current_user.family)
+  end
 
   def grocery_items
     @current_user.family.grocery_items

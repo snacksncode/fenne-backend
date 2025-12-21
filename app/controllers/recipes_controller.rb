@@ -42,12 +42,12 @@ class RecipesController < ApplicationController
   private
 
   def invalidate_recipe!(recipe)
-    QueryInvalidator.broadcast(:recipes)
+    QueryInvalidator.broadcast(:recipes, @current_user.family)
     dates = ScheduleDay.where("breakfast_recipe_id = :id OR lunch_recipe_id = :id OR dinner_recipe_id = :id", id: recipe.id)
       .pluck(:date).group_by { |d| [d.cwyear, d.cweek] }.values.map(&:first)
       .sort_by { |d| (d - Date.today).abs }
       .map(&:to_s)
-    QueryInvalidator.broadcast(:schedules, {dates:})
+    QueryInvalidator.broadcast(:schedules, @current_user.family, {dates:})
   end
 
   def recipe_params
