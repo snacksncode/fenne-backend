@@ -1,18 +1,7 @@
 class Recipe < ApplicationRecord
   belongs_to :family
   has_many :ingredients, dependent: :destroy
-  has_many :schedule_days_as_breakfast,
-    class_name: "ScheduleDay",
-    foreign_key: "breakfast_recipe_id",
-    dependent: :nullify
-  has_many :schedule_days_as_lunch,
-    class_name: "ScheduleDay",
-    foreign_key: "lunch_recipe_id",
-    dependent: :nullify
-  has_many :schedule_days_as_dinner,
-    class_name: "ScheduleDay",
-    foreign_key: "dinner_recipe_id",
-    dependent: :nullify
+  has_many :schedule_items, dependent: :destroy
 
   MEAL_TYPES = {breakfast: 1, lunch: 2, dinner: 4}
 

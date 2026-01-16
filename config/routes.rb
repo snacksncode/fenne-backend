@@ -40,6 +40,10 @@ Rails.application.routes.draw do
   delete "/invitations/:invitation_id", to: "family_invitations#destroy"
   post "/leave_family", to: "family_invitations#leave"
 
+  # autocomplete search
+  get "/search", to: "search#index"
+  delete "/search/:id", to: "search#destroy"
+
   # websockets
   mount ActionCable.server => "/cable"
 end

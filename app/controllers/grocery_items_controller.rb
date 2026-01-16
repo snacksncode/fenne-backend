@@ -18,16 +18,19 @@ class GroceryItemsController < ApplicationController
     start_date = parse_iso!(params.expect(:start))
     end_date = parse_iso!(params.expect(:end))
 
-    recipe_ids = family
-      .schedule_days
-      .in_range(start_date, end_date)
-      .pluck(:breakfast_recipe_id, :lunch_recipe_id, :dinner_recipe_id)
-      .flatten.uniq.compact
+    schedule_day_ids = ScheduleDay.in_range(start_date, end_date).pluck(:id)
+    items = ScheduleItem.where(schedule_day_id: schedule_day_ids)
+      .kind_recipe
+      .map(&:recipe)
+      .flat_map(&:ingredients)
+      .group_by { |ingredient| [ingredient.name, ingredient.unit] }
 
-    Ingredient.where(recipe_id: recipe_ids).map do |ingredient|
+    items.each do |k, ingredients|
+      ingredient = ingredients.first
+      total_quantity = ingredients.sum(&:quantity)
       family.grocery_items.create!(
         name: ingredient.name,
-        quantity: ingredient.quantity,
+        quantity: total_quantity,
         aisle: ingredient.aisle,
         unit: ingredient.unit
       )
@@ -40,6 +43,7 @@ class GroceryItemsController < ApplicationController
     item = @current_user.family.grocery_items.new(grocery_item_params)
     if item.save
       invalidate_groceries!
+      create_custom_food_item!(item)
       return render json: GroceryItemSerializer.render(item), status: :created
     end
     render json: {error: item.errors.full_messages.first}, status: :unprocessable_content
@@ -73,6 +77,16 @@ class GroceryItemsController < ApplicationController
 
   def invalidate_groceries!
     QueryInvalidator.broadcast(:grocery_items, @current_user.family)
+  end
+
+  def create_custom_food_item!(grocery_item)
+    food_item = FoodItem.find_by(name: grocery_item.name, aisle: grocery_item.aisle, family_id: [@current_user.family_id, nil])
+    if food_item.nil?
+      p "NOT FOUND, CREATING!"
+      FoodItem.create!(name: grocery_item.name, aisle: grocery_item.aisle, family_id: @current_user.family_id)
+    else
+      p "FOUND, IGNORE <3"
+    end
   end
 
   def grocery_items

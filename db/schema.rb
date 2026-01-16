@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_12_123405) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_12_205321) do
   create_table "families", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -25,6 +25,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_12_123405) do
     t.index ["family_id"], name: "index_family_invitations_on_family_id"
     t.index ["from_user_id"], name: "index_family_invitations_on_from_user_id"
     t.index ["to_user_id"], name: "index_family_invitations_on_to_user_id"
+  end
+
+  create_table "food_items", force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "aisle", null: false
+    t.integer "family_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["family_id"], name: "index_food_items_on_family_id"
   end
 
   create_table "grocery_items", force: :cascade do |t|
@@ -64,17 +73,24 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_12_123405) do
   create_table "schedule_days", force: :cascade do |t|
     t.integer "family_id", null: false
     t.date "date", null: false
-    t.integer "breakfast_recipe_id"
-    t.integer "lunch_recipe_id"
-    t.integer "dinner_recipe_id"
     t.boolean "is_shopping_day", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["breakfast_recipe_id"], name: "index_schedule_days_on_breakfast_recipe_id"
-    t.index ["dinner_recipe_id"], name: "index_schedule_days_on_dinner_recipe_id"
     t.index ["family_id", "date"], name: "index_schedule_days_on_family_id_and_date", unique: true
     t.index ["family_id"], name: "index_schedule_days_on_family_id"
-    t.index ["lunch_recipe_id"], name: "index_schedule_days_on_lunch_recipe_id"
+  end
+
+  create_table "schedule_items", force: :cascade do |t|
+    t.integer "schedule_day_id", null: false
+    t.integer "kind", null: false
+    t.integer "meal_type", null: false
+    t.integer "recipe_id"
+    t.string "dining_out_name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["recipe_id"], name: "index_schedule_items_on_recipe_id"
+    t.index ["schedule_day_id", "meal_type"], name: "index_schedule_items_on_schedule_day_id_and_meal_type", unique: true
+    t.index ["schedule_day_id"], name: "index_schedule_items_on_schedule_day_id"
   end
 
   create_table "session_tokens", force: :cascade do |t|
@@ -108,13 +124,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_12_123405) do
   add_foreign_key "family_invitations", "families"
   add_foreign_key "family_invitations", "users", column: "from_user_id"
   add_foreign_key "family_invitations", "users", column: "to_user_id"
+  add_foreign_key "food_items", "families"
   add_foreign_key "grocery_items", "families"
   add_foreign_key "ingredients", "recipes"
   add_foreign_key "recipes", "families"
   add_foreign_key "schedule_days", "families"
-  add_foreign_key "schedule_days", "recipes", column: "breakfast_recipe_id"
-  add_foreign_key "schedule_days", "recipes", column: "dinner_recipe_id"
-  add_foreign_key "schedule_days", "recipes", column: "lunch_recipe_id"
+  add_foreign_key "schedule_items", "recipes"
+  add_foreign_key "schedule_items", "schedule_days"
   add_foreign_key "session_tokens", "users"
   add_foreign_key "todos", "users"
   add_foreign_key "users", "families"

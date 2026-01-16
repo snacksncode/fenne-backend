@@ -2,7 +2,7 @@
 service: backend
 
 # Name of the container image.
-image: your-user/backend
+image: snacksncode/fenne-backend
 
 # Deploy to these servers.
 servers:

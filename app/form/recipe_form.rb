@@ -3,9 +3,6 @@ class RecipeForm
 
   attr_accessor :id, :name, :meal_types, :ingredients, :family, :liked, :time_in_minutes
 
-  validates :name, :meal_types, :family, :ingredients, :time_in_minutes, presence: true, unless: :updating?
-  validate :validate_ingredients, unless: :updating?
-
   def save
     return false if invalid?
 
@@ -20,7 +17,7 @@ class RecipeForm
 
       if ingredients.present?
         recipe.ingredients.destroy_all
-        ingredients.map do |ingredient_attributes|
+        ingredients.each do |ingredient_attributes|
           recipe.ingredients.create!(ingredient_attributes)
         end
       end
@@ -34,31 +31,11 @@ class RecipeForm
 
   private
 
-  def updating?
-    id.present?
-  end
-
   def find_or_initialize_recipe
     if id.present?
       family.recipes.find(id)
     else
       family.recipes.new
-    end
-  end
-
-  def validate_ingredients
-    unless ingredients.is_a?(Array)
-      return errors.add(:ingredients, "must be an array")
-    end
-
-    has_invalid_ingredient = ingredients.any? do |ingredient_attributes|
-      ingredient = Ingredient.new(ingredient_attributes)
-      ingredient.recipe = Recipe.new
-      return !ingredient.valid?
-    end
-
-    if has_invalid_ingredient
-      errors.add(:ingredients, "contains invalid data")
     end
   end
 end

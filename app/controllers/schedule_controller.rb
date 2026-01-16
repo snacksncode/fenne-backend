@@ -1,14 +1,40 @@
 class ScheduleController < ApplicationController
   rescue_from ArgumentError, with: :bad_request
 
+  class ScheduleContract < Dry::Validation::Contract
+    MealSchema = Dry::Schema.Params do
+      required(:type).filled(:string, included_in?: %w[recipe dining_out])
+      optional(:recipe_id).maybe(:string)
+      optional(:name).maybe(:string)
+    end
+
+    params do
+      optional(:breakfast).maybe(MealSchema)
+      optional(:lunch).maybe(MealSchema)
+      optional(:dinner).maybe(MealSchema)
+      optional(:is_shopping_day).filled(:bool)
+    end
+
+    %i[breakfast lunch dinner].each do |meal|
+      rule(meal) do
+        next if value.nil?
+
+        if value[:type] == "recipe" && value[:recipe_id].nil?
+          key([meal, :recipe_id]).failure("must be filled when type is recipe")
+        end
+
+        if value[:type] == "dining_out" && value[:name].nil?
+          key([meal, :name]).failure("must be filled when type is dining_out")
+        end
+      end
+    end
+  end
+
   def index
     start_date = parse_iso!(params[:start])
     end_date = parse_iso!(params[:end])
 
-    schedule_days = @current_user.family.schedule_days
-      .includes(breakfast_recipe: :ingredients, lunch_recipe: :ingredients, dinner_recipe: :ingredients)
-      .in_range(start_date, end_date)
-
+    schedule_days = @current_user.family.schedule_days.in_range(start_date, end_date)
     schedule_map = schedule_days.index_by(&:date)
 
     schedule = (start_date..end_date).map do |date|
@@ -20,13 +46,16 @@ class ScheduleController < ApplicationController
 
   def upsert
     date = parse_iso!(params[:date])
-    schedule_day = @current_user.family.schedule_days.find_or_create_by(date:)
+    schedule_params = validate_params!(ScheduleContract)
 
-    if schedule_day.update(schedule_day_params)
+    # TODO: probably we should params.expect(:data) instead of using raw params
+    form = ScheduleForm.new(data: schedule_params, date: date, user: @current_user)
+    if form.save
       QueryInvalidator.broadcast(:schedules, @current_user.family, {dates: [date]})
+      schedule_day = @current_user.family.schedule_days.find_by(date:)
       render json: ScheduleDaySerializer.render(schedule_day), status: :ok
     else
-      render json: schedule_day.errors, status: :unprocessable_content
+      render json: {errors: form.errors}, status: :unprocessable_entity
     end
   end
 
@@ -36,21 +65,8 @@ class ScheduleController < ApplicationController
     ScheduleDay.new(
       date:,
       family: @current_user.family,
-      breakfast_recipe_id: nil,
-      lunch_recipe_id: nil,
-      dinner_recipe_id: nil,
       is_shopping_day: false
     )
-  end
-
-  def schedule_day_params
-    params.expect(data: [
-      :date,
-      :breakfast_recipe_id,
-      :lunch_recipe_id,
-      :dinner_recipe_id,
-      :is_shopping_day
-    ])
   end
 
   def parse_iso!(date_string)

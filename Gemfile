@@ -65,3 +65,5 @@ group :test do
 end
 
 gem "standard", "~> 1.49"
+
+gem "dry-validation"

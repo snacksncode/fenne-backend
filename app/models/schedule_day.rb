@@ -1,24 +1,22 @@
 class ScheduleDay < ApplicationRecord
   belongs_to :family
-  belongs_to :breakfast_recipe, class_name: "Recipe", optional: true
-  belongs_to :lunch_recipe, class_name: "Recipe", optional: true
-  belongs_to :dinner_recipe, class_name: "Recipe", optional: true
-
+  has_many :schedule_items, dependent: :destroy
   validates :date, presence: true
   validates :date, uniqueness: {scope: :family_id}
-  validate :recipes_belong_to_family
+
+  def breakfast
+    schedule_items.find { |i| i.meal_type_breakfast? }
+  end
+
+  def lunch
+    schedule_items.find { |i| i.meal_type_lunch? }
+  end
+
+  def dinner
+    schedule_items.find { |i| i.meal_type_dinner? }
+  end
 
   scope :in_range, ->(start_date, end_date) {
     where(date: start_date..end_date).order(:date)
   }
-
-  private
-
-  def recipes_belong_to_family
-    [breakfast_recipe, lunch_recipe, dinner_recipe].compact.each do |recipe|
-      if recipe.family_id != family_id
-        errors.add(:base, "recipes should belong to one family")
-      end
-    end
-  end
 end
