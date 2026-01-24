@@ -13,3 +13,12 @@ module ActiveSupport
     # Add more helper methods to be used by all tests here...
   end
 end
+
+module AuthHelper
+  def auth_headers_for(user)
+    token = user.session_tokens.first
+    { "Authorization" => "Bearer #{token.token}" }
+  end
+end
+
+ActiveSupport::TestCase.include AuthHelper

@@ -81,11 +81,9 @@ class GroceryItemsController < ApplicationController
 
   def create_custom_food_item!(grocery_item)
     food_item = FoodItem.find_by(name: grocery_item.name, aisle: grocery_item.aisle, family_id: [@current_user.family_id, nil])
+    # TODO: Should also be done during recipe creation. I might create an endpoint for FE to hit up
     if food_item.nil?
-      p "NOT FOUND, CREATING!"
       FoodItem.create!(name: grocery_item.name, aisle: grocery_item.aisle, family_id: @current_user.family_id)
-    else
-      p "FOUND, IGNORE <3"
     end
   end
 
