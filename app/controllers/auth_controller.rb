@@ -1,5 +1,5 @@
 class AuthController < ApplicationController
-  skip_before_action :authenticate_request!, only: [:login, :signup]
+  skip_before_action :authenticate_request!, only: [:login, :signup, :guest]
 
   def login
     email, password = login_params
@@ -41,6 +41,18 @@ class AuthController < ApplicationController
     end
 
     render json: {error: user.errors.full_messages.first}, status: :unprocessable_content
+  end
+
+  def guest
+    email = "#{SecureRandom.uuid}@fenneplanner.com"
+    password = SecureRandom.hex(16)
+    user = User.new(email:, password:, name: "Guest")
+
+    if user.save
+      return render json: {status: :success, session_token: user.session_tokens.create!.token}
+    end
+
+    render json: {error: user.errors.full_messages.first}, status: unprocessable_content
   end
 
   def logout

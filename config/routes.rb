@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   post "/login", to: "auth#login"
   post "/logout", to: "auth#logout"
   post "/change_password", to: "auth#change_password"
+  post "/guest", to: "auth#guest"
   get "/me", to: "auth#me"
 
   # grocery items
