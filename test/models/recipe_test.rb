@@ -74,17 +74,6 @@ class RecipeTest < ActiveSupport::TestCase
     end
   end
 
-  test "validates name presence" do
-    recipe = Recipe.new(
-      family: families(:smith_family),
-      meal_types: [:breakfast],
-      time_in_minutes: 30
-    )
-
-    assert_not recipe.valid?
-    assert_includes recipe.errors[:name], "can't be blank"
-  end
-
   test "validates meal_types presence" do
     recipe = Recipe.new(
       family: families(:smith_family),

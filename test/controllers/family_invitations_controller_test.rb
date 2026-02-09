@@ -28,9 +28,9 @@ class FamilyInvitationsControllerTest < ActionDispatch::IntegrationTest
 
     assert_difference("FamilyInvitation.count", 1) do
       post "/invitations",
-           params: {email: recipient.email},
-           headers: auth_headers_for(sender),
-           as: :json
+        params: {email: recipient.email},
+        headers: auth_headers_for(sender),
+        as: :json
     end
 
     assert_response :success
@@ -48,9 +48,9 @@ class FamilyInvitationsControllerTest < ActionDispatch::IntegrationTest
     recipient = users(:diana_lee)
 
     post "/invitations",
-         params: {email: recipient.email.upcase},
-         headers: auth_headers_for(sender),
-         as: :json
+      params: {email: recipient.email.upcase},
+      headers: auth_headers_for(sender),
+      as: :json
 
     assert_response :success
   end
@@ -59,9 +59,9 @@ class FamilyInvitationsControllerTest < ActionDispatch::IntegrationTest
     sender = users(:john_smith)
 
     post "/invitations",
-         params: {email: "invalid-email"},
-         headers: auth_headers_for(sender),
-         as: :json
+      params: {email: "invalid-email"},
+      headers: auth_headers_for(sender),
+      as: :json
 
     assert_response :bad_request
     json = response.parsed_body
@@ -72,9 +72,9 @@ class FamilyInvitationsControllerTest < ActionDispatch::IntegrationTest
     sender = users(:john_smith)
 
     post "/invitations",
-         params: {email: "nonexistent@example.com"},
-         headers: auth_headers_for(sender),
-         as: :json
+      params: {email: "nonexistent@example.com"},
+      headers: auth_headers_for(sender),
+      as: :json
 
     assert_response :not_found
   end
@@ -84,9 +84,9 @@ class FamilyInvitationsControllerTest < ActionDispatch::IntegrationTest
     same_family_user = users(:jane_smith)
 
     post "/invitations",
-         params: {email: same_family_user.email},
-         headers: auth_headers_for(sender),
-         as: :json
+      params: {email: same_family_user.email},
+      headers: auth_headers_for(sender),
+      as: :json
 
     assert_response :bad_request
     json = response.parsed_body
@@ -99,9 +99,9 @@ class FamilyInvitationsControllerTest < ActionDispatch::IntegrationTest
 
     # First invitation exists in fixtures
     post "/invitations",
-         params: {email: recipient.email},
-         headers: auth_headers_for(sender),
-         as: :json
+      params: {email: recipient.email},
+      headers: auth_headers_for(sender),
+      as: :json
 
     assert_response :bad_request
     json = response.parsed_body
@@ -110,8 +110,8 @@ class FamilyInvitationsControllerTest < ActionDispatch::IntegrationTest
 
   test "invite requires authentication" do
     post "/invitations",
-         params: {email: "test@example.com"},
-         as: :json
+      params: {email: "test@example.com"},
+      as: :json
 
     assert_response :unauthorized
   end

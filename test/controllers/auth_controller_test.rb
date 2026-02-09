@@ -130,9 +130,9 @@ class AuthControllerTest < ActionDispatch::IntegrationTest
     user = users(:john_smith)
 
     post "/change_password",
-         params: {current_password: "test1234", new_password: "newpassword123"},
-         headers: auth_headers_for(user),
-         as: :json
+      params: {current_password: "test1234", new_password: "newpassword123"},
+      headers: auth_headers_for(user),
+      as: :json
 
     assert_response :success
     user.reload
@@ -144,9 +144,9 @@ class AuthControllerTest < ActionDispatch::IntegrationTest
     user = users(:john_smith)
 
     post "/change_password",
-         params: {current_password: "wrongpassword", new_password: "newpassword123"},
-         headers: auth_headers_for(user),
-         as: :json
+      params: {current_password: "wrongpassword", new_password: "newpassword123"},
+      headers: auth_headers_for(user),
+      as: :json
 
     assert_response :unauthorized
     json = response.parsed_body
@@ -155,8 +155,8 @@ class AuthControllerTest < ActionDispatch::IntegrationTest
 
   test "change_password requires authentication" do
     post "/change_password",
-         params: {current_password: "test1234", new_password: "newpassword123"},
-         as: :json
+      params: {current_password: "test1234", new_password: "newpassword123"},
+      as: :json
 
     assert_response :unauthorized
   end

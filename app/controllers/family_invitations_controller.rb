@@ -7,8 +7,7 @@ class FamilyInvitationsController < ApplicationController
   end
 
   def invite
-    email, is_valid = get_email
-    return bad_request!("Email format invalid") unless is_valid
+    email = get_email
 
     user = User.find_by!(email:)
     return bad_request!("User already in your family") unless user.family.id != @current_user.family.id
@@ -79,7 +78,7 @@ class FamilyInvitationsController < ApplicationController
 
   def get_email
     email = params.expect(:email)
-    is_valid = email.match?(URI::MailTo::EMAIL_REGEXP)
-    [email.downcase, is_valid]
+    validate_email!(email)
+    email.downcase
   end
 end

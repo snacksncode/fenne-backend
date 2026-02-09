@@ -6,6 +6,8 @@ class ApplicationController < ActionController::API
     end
   end
 
+  class InvalidEmailError < StandardError; end
+
   before_action :authenticate_request!
   wrap_parameters false
   rescue_from ActiveRecord::RecordNotFound, with: :not_found!
@@ -27,8 +29,17 @@ class ApplicationController < ActionController::API
     render json: {error: message}, status: :bad_request
   end
 
+  def validate_email!(email)
+    is_valid = email.to_s.match?(URI::MailTo::EMAIL_REGEXP)
+    raise InvalidEmailError unless is_valid
+  end
+
   def not_found!
     render json: {error: "Not found"}, status: :not_found
+  end
+
+  rescue_from InvalidEmailError do
+    bad_request!("Email format invalid")
   end
 
   rescue_from ActionController::ParameterMissing do |exception|

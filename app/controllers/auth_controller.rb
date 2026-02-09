@@ -27,10 +27,22 @@ class AuthController < ApplicationController
     render json: {success: true}
   end
 
-  # def change_details
-  #   will be used to update email and name
-  #   render json: {success: true}
-  # end
+  def change_details
+    data = change_details_params
+    @current_user.update!(name: data[:name]) if data[:name].present?
+    @current_user.update!(email: data[:email]) if data[:email].present?
+    render json: {success: true}
+  end
+
+  def convert_guest
+    email, password, name = signup_params
+
+    if @current_user.update(email:, password:, name:)
+      return render json: {status: :success}
+    end
+
+    render json: {error: @current_user.errors.full_messages.first}, status: :unprocessable_content
+  end
 
   def signup
     email, password, name = signup_params
@@ -52,7 +64,7 @@ class AuthController < ApplicationController
       return render json: {status: :success, session_token: user.session_tokens.create!.token}
     end
 
-    render json: {error: user.errors.full_messages.first}, status: unprocessable_content
+    render json: {error: user.errors.full_messages.first}, status: :unprocessable_content
   end
 
   def logout
@@ -69,15 +81,23 @@ class AuthController < ApplicationController
 
   def login_params
     email, password = params.expect(:email, :password)
+    validate_email!(email)
     [email.downcase, password]
   end
 
   def signup_params
     email, password, name = params.expect(:email, :password, :name)
+    validate_email!(email)
     [email.downcase, password, name]
   end
 
   def password_params
     params.expect(:current_password, :new_password)
+  end
+
+  def change_details_params
+    data = params.expect(data: [:name, :email])
+    validate_email!(data[:email]) if data[:email].present?
+    data
   end
 end

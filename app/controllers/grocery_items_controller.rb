@@ -18,7 +18,7 @@ class GroceryItemsController < ApplicationController
     start_date = parse_iso!(params.expect(:start))
     end_date = parse_iso!(params.expect(:end))
 
-    schedule_day_ids = ScheduleDay.in_range(start_date, end_date).pluck(:id)
+    schedule_day_ids = @current_user.family.schedule_days.in_range(start_date, end_date).pluck(:id)
     items = ScheduleItem.where(schedule_day_id: schedule_day_ids)
       .kind_recipe
       .map(&:recipe)
@@ -43,7 +43,6 @@ class GroceryItemsController < ApplicationController
     item = @current_user.family.grocery_items.new(grocery_item_params)
     if item.save
       invalidate_groceries!
-      create_custom_food_item!(item)
       return render json: GroceryItemSerializer.render(item), status: :created
     end
     render json: {error: item.errors.full_messages.first}, status: :unprocessable_content
@@ -77,14 +76,6 @@ class GroceryItemsController < ApplicationController
 
   def invalidate_groceries!
     QueryInvalidator.broadcast(:grocery_items, @current_user.family)
-  end
-
-  def create_custom_food_item!(grocery_item)
-    food_item = FoodItem.find_by(name: grocery_item.name, aisle: grocery_item.aisle, family_id: [@current_user.family_id, nil])
-    # TODO: Should also be done during recipe creation. I might create an endpoint for FE to hit up
-    if food_item.nil?
-      FoodItem.create!(name: grocery_item.name, aisle: grocery_item.aisle, family_id: @current_user.family_id)
-    end
   end
 
   def grocery_items

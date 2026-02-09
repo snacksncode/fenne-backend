@@ -53,13 +53,13 @@ class ScheduleControllerTest < ActionDispatch::IntegrationTest
     recipe = recipes(:pasta_carbonara_smith)
 
     put "/schedule/#{date}",
-        params: {
-          breakfast: {type: "recipe", recipe_id: recipe.id.to_s},
-          lunch: {type: "dining_out", name: "Restaurant"},
-          is_shopping_day: true
-        },
-        headers: auth_headers_for(user),
-        as: :json
+      params: {
+        breakfast: {type: "recipe", recipe_id: recipe.id.to_s},
+        lunch: {type: "dining_out", name: "Restaurant"},
+        is_shopping_day: true
+      },
+      headers: auth_headers_for(user),
+      as: :json
 
     assert_response :ok
     json = response.parsed_body
@@ -75,12 +75,12 @@ class ScheduleControllerTest < ActionDispatch::IntegrationTest
     recipe = recipes(:pasta_carbonara_smith)
 
     put "/schedule/#{schedule_day.date}",
-        params: {
-          dinner: {type: "recipe", recipe_id: recipe.id.to_s},
-          is_shopping_day: false
-        },
-        headers: auth_headers_for(user),
-        as: :json
+      params: {
+        dinner: {type: "recipe", recipe_id: recipe.id.to_s},
+        is_shopping_day: false
+      },
+      headers: auth_headers_for(user),
+      as: :json
 
     assert_response :ok
     json = response.parsed_body
@@ -92,11 +92,11 @@ class ScheduleControllerTest < ActionDispatch::IntegrationTest
     date = Date.today + 70.days
 
     put "/schedule/#{date}",
-        params: {
-          breakfast: {type: "recipe", recipe_id: "999999"}
-        },
-        headers: auth_headers_for(user),
-        as: :json
+      params: {
+        breakfast: {type: "recipe", recipe_id: "999999"}
+      },
+      headers: auth_headers_for(user),
+      as: :json
 
     assert_response :unprocessable_entity
   end
@@ -106,11 +106,11 @@ class ScheduleControllerTest < ActionDispatch::IntegrationTest
     date = Date.today + 80.days
 
     put "/schedule/#{date}",
-        params: {
-          breakfast: {type: "recipe"}
-        },
-        headers: auth_headers_for(user),
-        as: :json
+      params: {
+        breakfast: {type: "recipe"}
+      },
+      headers: auth_headers_for(user),
+      as: :json
 
     assert_response :unprocessable_entity
     json = response.parsed_body
@@ -122,11 +122,11 @@ class ScheduleControllerTest < ActionDispatch::IntegrationTest
     date = Date.today + 90.days
 
     put "/schedule/#{date}",
-        params: {
-          lunch: {type: "dining_out"}
-        },
-        headers: auth_headers_for(user),
-        as: :json
+      params: {
+        lunch: {type: "dining_out"}
+      },
+      headers: auth_headers_for(user),
+      as: :json
 
     assert_response :unprocessable_entity
     json = response.parsed_body
@@ -139,14 +139,14 @@ class ScheduleControllerTest < ActionDispatch::IntegrationTest
     recipe = recipes(:pasta_carbonara_smith)
 
     put "/schedule/#{date}",
-        params: {
-          breakfast: {type: "recipe", recipe_id: recipe.id.to_s},
-          lunch: {type: "dining_out", name: "Cafe"},
-          dinner: {type: "recipe", recipe_id: recipe.id.to_s},
-          is_shopping_day: true
-        },
-        headers: auth_headers_for(user),
-        as: :json
+      params: {
+        breakfast: {type: "recipe", recipe_id: recipe.id.to_s},
+        lunch: {type: "dining_out", name: "Cafe"},
+        dinner: {type: "recipe", recipe_id: recipe.id.to_s},
+        is_shopping_day: true
+      },
+      headers: auth_headers_for(user),
+      as: :json
 
     assert_response :ok
     json = response.parsed_body
@@ -159,17 +159,17 @@ class ScheduleControllerTest < ActionDispatch::IntegrationTest
     user = users(:john_smith)
 
     put "/schedule/invalid-date",
-        params: {breakfast: {type: "dining_out", name: "Test"}},
-        headers: auth_headers_for(user),
-        as: :json
+      params: {breakfast: {type: "dining_out", name: "Test"}},
+      headers: auth_headers_for(user),
+      as: :json
 
     assert_response :bad_request
   end
 
   test "upsert requires authentication" do
     put "/schedule/#{Date.today}",
-        params: {breakfast: {type: "dining_out", name: "Test"}},
-        as: :json
+      params: {breakfast: {type: "dining_out", name: "Test"}},
+      as: :json
 
     assert_response :unauthorized
   end

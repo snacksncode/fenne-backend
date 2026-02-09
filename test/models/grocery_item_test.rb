@@ -26,8 +26,8 @@ class GroceryItemTest < ActiveSupport::TestCase
     item = grocery_items(:smith_milk)
 
     %i[produce bakery dairy_eggs meat seafood pantry frozen_foods beverages
-       snacks condiments_sauces spices_baking household personal_care
-       pet_supplies other].each do |aisle_type|
+      snacks condiments_sauces spices_baking household personal_care
+      pet_supplies other].each do |aisle_type|
       item.aisle = aisle_type
       assert_equal aisle_type.to_s, item.aisle
     end

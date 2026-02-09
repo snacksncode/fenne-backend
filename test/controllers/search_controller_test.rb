@@ -24,9 +24,9 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
   test "index returns global and family-specific items" do
     user = users(:john_smith)
 
-    global_item = FoodItem.create!(name: "Global Apple", aisle: :produce, family_id: nil)
-    family_item = FoodItem.create!(name: "Family Apple Pie", aisle: :bakery, family_id: user.family_id)
-    other_family_item = FoodItem.create!(name: "Other Apple Juice", aisle: :beverages, family_id: families(:johnson_family).id)
+    FoodItem.create!(name: "Global Apple", aisle: :produce, family_id: nil)
+    FoodItem.create!(name: "Family Apple Pie", aisle: :bakery, family_id: user.family_id)
+    FoodItem.create!(name: "Other Apple Juice", aisle: :beverages, family_id: families(:johnson_family).id)
 
     get "/search", params: {q: "apple"}, headers: auth_headers_for(user)
 

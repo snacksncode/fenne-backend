@@ -17,7 +17,7 @@ end
 module AuthHelper
   def auth_headers_for(user)
     token = user.session_tokens.first
-    { "Authorization" => "Bearer #{token.token}" }
+    {"Authorization" => "Bearer #{token.token}"}
   end
 end
 

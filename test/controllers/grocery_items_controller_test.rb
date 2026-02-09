@@ -61,17 +61,17 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
     assert_difference("GroceryItem.count", 1) do
       post "/grocery_items",
-           params: {
-             data: {
-               name: "New Item",
-               quantity: 2,
-               aisle: "produce",
-               unit: "count",
-               status: "pending"
-             }
-           },
-           headers: auth_headers_for(user),
-           as: :json
+        params: {
+          data: {
+            name: "New Item",
+            quantity: 2,
+            aisle: "produce",
+            unit: "count",
+            status: "pending"
+          }
+        },
+        headers: auth_headers_for(user),
+        as: :json
     end
 
     assert_response :created
@@ -84,9 +84,9 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference("GroceryItem.count") do
       post "/grocery_items",
-           params: {data: {name: ""}},
-           headers: auth_headers_for(user),
-           as: :json
+        params: {data: {name: ""}},
+        headers: auth_headers_for(user),
+        as: :json
     end
 
     assert_response :unprocessable_entity
@@ -94,8 +94,8 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "create requires authentication" do
     post "/grocery_items",
-         params: {data: {name: "Test"}},
-         as: :json
+      params: {data: {name: "Test"}},
+      as: :json
 
     assert_response :unauthorized
   end
@@ -106,17 +106,17 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     item = grocery_items(:smith_milk)
 
     put "/grocery_items/#{item.id}",
-        params: {
-          data: {
-            name: "Updated Item",
-            quantity: 5,
-            aisle: "dairy_eggs",
-            unit: "l",
-            status: "completed"
-          }
-        },
-        headers: auth_headers_for(user),
-        as: :json
+      params: {
+        data: {
+          name: "Updated Item",
+          quantity: 5,
+          aisle: "dairy_eggs",
+          unit: "l",
+          status: "completed"
+        }
+      },
+      headers: auth_headers_for(user),
+      as: :json
 
     assert_response :ok
     json = response.parsed_body
@@ -135,9 +135,9 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     )
 
     put "/grocery_items/#{other_item.id}",
-        params: {data: {name: "Hacked"}},
-        headers: auth_headers_for(user),
-        as: :json
+      params: {data: {name: "Hacked"}},
+      headers: auth_headers_for(user),
+      as: :json
 
     assert_response :not_found
   end
@@ -146,8 +146,8 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     item = grocery_items(:smith_milk)
 
     put "/grocery_items/#{item.id}",
-        params: {data: {name: "Updated"}},
-        as: :json
+      params: {data: {name: "Updated"}},
+      as: :json
 
     assert_response :unauthorized
   end
@@ -240,9 +240,9 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
     assert_difference("GroceryItem.count", ingredient_count) do
       post "/grocery_items/generate",
-           params: {start: Date.today.to_s, end: Date.today.to_s},
-           headers: auth_headers_for(user),
-           as: :json
+        params: {start: Date.today.to_s, end: Date.today.to_s},
+        headers: auth_headers_for(user),
+        as: :json
     end
 
     assert_response :success
@@ -277,9 +277,9 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     # Should create unique items, not duplicate
     assert_difference("GroceryItem.count", ingredient_count) do
       post "/grocery_items/generate",
-           params: {start: date1.to_s, end: date2.to_s},
-           headers: auth_headers_for(user),
-           as: :json
+        params: {start: date1.to_s, end: date2.to_s},
+        headers: auth_headers_for(user),
+        as: :json
     end
 
     # Check that quantities are aggregated (doubled in this case)
@@ -291,16 +291,16 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     user = users(:john_smith)
 
     post "/grocery_items/generate",
-         headers: auth_headers_for(user),
-         as: :json
+      headers: auth_headers_for(user),
+      as: :json
 
     assert_response :bad_request
   end
 
   test "generate requires authentication" do
     post "/grocery_items/generate",
-         params: {start: Date.today.to_s, end: Date.today.to_s},
-         as: :json
+      params: {start: Date.today.to_s, end: Date.today.to_s},
+      as: :json
 
     assert_response :unauthorized
   end

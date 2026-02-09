@@ -60,20 +60,20 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_difference("Recipe.count", 1) do
       assert_difference("Ingredient.count", 2) do
         post "/recipes",
-             params: {
-               data: {
-                 name: "New Recipe",
-                 meal_types: ["breakfast", "lunch"],
-                 time_in_minutes: 30,
-                 liked: false,
-                 ingredients: [
-                   {name: "Flour", quantity: 2.0, unit: "cup", aisle: "spices_baking"},
-                   {name: "Milk", quantity: 1.0, unit: "cup", aisle: "dairy_eggs"}
-                 ]
-               }
-             },
-             headers: auth_headers_for(user),
-             as: :json
+          params: {
+            data: {
+              name: "New Recipe",
+              meal_types: ["breakfast", "lunch"],
+              time_in_minutes: 30,
+              liked: false,
+              ingredients: [
+                {name: "Flour", quantity: 2.0, unit: "cup", aisle: "spices_baking"},
+                {name: "Milk", quantity: 1.0, unit: "cup", aisle: "dairy_eggs"}
+              ]
+            }
+          },
+          headers: auth_headers_for(user),
+          as: :json
       end
     end
 
@@ -88,9 +88,9 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference("Recipe.count") do
       post "/recipes",
-           params: {data: {name: ""}},
-           headers: auth_headers_for(user),
-           as: :json
+        params: {data: {name: ""}},
+        headers: auth_headers_for(user),
+        as: :json
     end
 
     assert_response :unprocessable_entity
@@ -101,16 +101,16 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference("Recipe.count") do
       post "/recipes",
-           params: {
-             data: {
-               name: "Test",
-               meal_types: [],
-               time_in_minutes: 30,
-               ingredients: [{name: "Test", quantity: 1.0, unit: "cup", aisle: "produce"}]
-             }
-           },
-           headers: auth_headers_for(user),
-           as: :json
+        params: {
+          data: {
+            name: "Test",
+            meal_types: [],
+            time_in_minutes: 30,
+            ingredients: [{name: "Test", quantity: 1.0, unit: "cup", aisle: "produce"}]
+          }
+        },
+        headers: auth_headers_for(user),
+        as: :json
     end
 
     assert_response :unprocessable_entity
@@ -121,16 +121,16 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference("Recipe.count") do
       post "/recipes",
-           params: {
-             data: {
-               name: "Test",
-               meal_types: ["breakfast"],
-               time_in_minutes: 30,
-               ingredients: []
-             }
-           },
-           headers: auth_headers_for(user),
-           as: :json
+        params: {
+          data: {
+            name: "Test",
+            meal_types: ["breakfast"],
+            time_in_minutes: 30,
+            ingredients: []
+          }
+        },
+        headers: auth_headers_for(user),
+        as: :json
     end
 
     assert_response :unprocessable_entity
@@ -138,8 +138,8 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
 
   test "create requires authentication" do
     post "/recipes",
-         params: {data: {name: "Test"}},
-         as: :json
+      params: {data: {name: "Test"}},
+      as: :json
 
     assert_response :unauthorized
   end
@@ -150,19 +150,19 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
     recipe = recipes(:pasta_carbonara_smith)
 
     put "/recipes/#{recipe.id}",
-        params: {
-          data: {
-            name: "Updated Recipe",
-            meal_types: ["dinner"],
-            time_in_minutes: 45,
-            liked: true,
-            ingredients: [
-              {name: "New Ingredient", quantity: 3.0, unit: "tbsp", aisle: "condiments_sauces"}
-            ]
-          }
-        },
-        headers: auth_headers_for(user),
-        as: :json
+      params: {
+        data: {
+          name: "Updated Recipe",
+          meal_types: ["dinner"],
+          time_in_minutes: 45,
+          liked: true,
+          ingredients: [
+            {name: "New Ingredient", quantity: 3.0, unit: "tbsp", aisle: "condiments_sauces"}
+          ]
+        }
+      },
+      headers: auth_headers_for(user),
+      as: :json
 
     assert_response :success
     json = response.parsed_body
@@ -176,9 +176,9 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
     other_recipe = recipes(:grilled_salmon_johnson)
 
     put "/recipes/#{other_recipe.id}",
-        params: {data: {name: "Hacked"}},
-        headers: auth_headers_for(user),
-        as: :json
+      params: {data: {name: "Hacked"}},
+      headers: auth_headers_for(user),
+      as: :json
 
     assert_response :not_found
     other_recipe.reload
@@ -189,8 +189,8 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
     recipe = recipes(:pasta_carbonara_smith)
 
     put "/recipes/#{recipe.id}",
-        params: {data: {name: "Updated"}},
-        as: :json
+      params: {data: {name: "Updated"}},
+      as: :json
 
     assert_response :unauthorized
   end

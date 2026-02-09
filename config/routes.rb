@@ -18,6 +18,8 @@ Rails.application.routes.draw do
   post "/logout", to: "auth#logout"
   post "/change_password", to: "auth#change_password"
   post "/guest", to: "auth#guest"
+  post "/change_details", to: "auth#change_details"
+  post "/convert_guest", to: "auth#convert_guest"
   get "/me", to: "auth#me"
 
   # grocery items
@@ -27,6 +29,9 @@ Rails.application.routes.draw do
 
   # recipes
   resources :recipes
+
+  # food items
+  resources :food_items
 
   # schedule
   get "/schedule", to: "schedule#index"
@@ -40,10 +45,6 @@ Rails.application.routes.draw do
   post "/invitations/:invitation_id/decline", to: "family_invitations#decline"
   delete "/invitations/:invitation_id", to: "family_invitations#destroy"
   post "/leave_family", to: "family_invitations#leave"
-
-  # autocomplete search
-  get "/search", to: "search#index"
-  delete "/search/:id", to: "search#destroy"
 
   # websockets
   mount ActionCable.server => "/cable"
