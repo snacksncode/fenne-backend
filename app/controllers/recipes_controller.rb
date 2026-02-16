@@ -18,6 +18,7 @@ class RecipesController < ApplicationController
         optional(:time_in_minutes).filled(:integer, gt?: 0)
         optional(:liked).filled(:bool)
         optional(:ingredients).filled(:array, min_size?: 1).each(IngredientSchema)
+        optional(:notes).filled(:string)
       end
     end
   end
