@@ -55,8 +55,12 @@ class AuthController < ApplicationController
     render json: {error: user.errors.full_messages.first}, status: :unprocessable_content
   end
 
+  def destroy
+    @current_user.destroy!
+  end
+
   def guest
-    email = "#{SecureRandom.uuid}@fenneplanner.com"
+    email = "#{SecureRandom.uuid}+guest@fenneplanner.com"
     password = SecureRandom.hex(16)
     user = User.new(email:, password:, name: "Guest")
 

@@ -21,6 +21,7 @@ Rails.application.routes.draw do
   post "/change_details", to: "auth#change_details"
   post "/convert_guest", to: "auth#convert_guest"
   get "/me", to: "auth#me"
+  delete "/delete_account", to: "auth#destroy"
 
   # grocery items
   resources :grocery_items
