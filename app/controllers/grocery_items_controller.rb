@@ -36,6 +36,7 @@ class GroceryItemsController < ApplicationController
       )
     end
 
+    invalidate_groceries!
     render json: {success: true}
   end
 
