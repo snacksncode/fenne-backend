@@ -430,7 +430,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "generate converts to imperial for imperial user" do
     user = users(:john_smith)
-    user.family.update!(unit_preference: 1) # imperial
+    user.family.update!(unit_preference: :imperial) # imperial
     recipe = recipes(:pasta_carbonara_smith)
     
     # Create ingredient: Flour 100g
@@ -461,7 +461,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
   # Display conversion tests
   test "show applies metric display conversion for metric user" do
     user = users(:john_smith)
-    user.family.update!(unit_preference: 0) # metric
+    user.family.update!(unit_preference: :metric) # metric
     item = GroceryItem.create!(
       family: user.family,
       name: "Test Item",
@@ -481,7 +481,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "show applies imperial display conversion for imperial user" do
     user = users(:john_smith)
-    user.family.update!(unit_preference: 1) # imperial
+    user.family.update!(unit_preference: :imperial) # imperial
     item = GroceryItem.create!(
       family: user.family,
       name: "Test Item",
@@ -501,7 +501,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "show applies spoon conversion for both systems" do
     user = users(:john_smith)
-    user.family.update!(unit_preference: 0) # metric
+    user.family.update!(unit_preference: :metric) # metric
     item = GroceryItem.create!(
       family: user.family,
       name: "Test Item",
@@ -521,7 +521,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "show preserves count unit" do
     user = users(:john_smith)
-    user.family.update!(unit_preference: 0) # metric
+    user.family.update!(unit_preference: :metric) # metric
     item = GroceryItem.create!(
       family: user.family,
       name: "Test Item",
@@ -541,7 +541,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "index applies display conversion for all items" do
     user = users(:john_smith)
-    user.family.update!(unit_preference: 0) # metric
+    user.family.update!(unit_preference: :metric) # metric
     item1 = GroceryItem.create!(
       family: user.family,
       name: "Item 1",

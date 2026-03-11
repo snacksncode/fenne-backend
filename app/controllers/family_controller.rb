@@ -5,6 +5,8 @@ class FamilyController < ApplicationController
     else
       render json: { error: @current_user.family.errors.full_messages.first }, status: :unprocessable_content
     end
+  rescue ArgumentError => e
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   private

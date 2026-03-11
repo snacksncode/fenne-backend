@@ -176,14 +176,14 @@ class AuthControllerTest < ActionDispatch::IntegrationTest
 
   test "me endpoint includes unit_preference in response" do
     user = users(:john_smith)
-    user.family.update!(unit_preference: 1)
+    user.family.update!(unit_preference: :imperial)
 
     get "/me", headers: auth_headers_for(user)
 
     assert_response :success
     json = response.parsed_body
     assert_not_nil json["family"]
-    assert_equal 1, json["family"]["unit_preference"]
+    assert_equal "imperial", json["family"]["unit_preference"]
   end
 
   test "change_details requires authentication" do

@@ -1,6 +1,6 @@
 class GroceryItemSerializer
-  def self.render(grocery_item, unit_preference: 0)
-    system = unit_preference == 1 ? :imperial : :metric
+  def self.render(grocery_item, unit_preference: "metric")
+    system = unit_preference.to_sym
     display_qty, display_unit = UnitConverter.friendly(grocery_item.quantity.to_f, grocery_item.unit.to_sym, system)
     {
       id: grocery_item.id.to_s,
@@ -12,7 +12,7 @@ class GroceryItemSerializer
     }
   end
 
-  def self.render_many(grocery_items, unit_preference: 0)
+  def self.render_many(grocery_items, unit_preference: "metric")
     grocery_items.map { |grocery_item| render(grocery_item, unit_preference: unit_preference) }
   end
 end

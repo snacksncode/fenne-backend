@@ -2,12 +2,12 @@ require "test_helper"
 
 class FamilyControllerTest < ActionDispatch::IntegrationTest
   # PATCH /family/preferences
-  test "preferences updates unit_preference to 1 (imperial)" do
+  test "preferences updates unit_preference to imperial" do
     user = users(:john_smith)
-    assert_equal 0, user.family.unit_preference
+    assert_equal "metric", user.family.unit_preference
 
     patch "/family/preferences",
-      params: { data: { unit_preference: 1 } },
+      params: { data: { unit_preference: "imperial" } },
       headers: auth_headers_for(user),
       as: :json
 
@@ -15,15 +15,15 @@ class FamilyControllerTest < ActionDispatch::IntegrationTest
     json = response.parsed_body
     assert_equal true, json["success"]
     user.reload
-    assert_equal 1, user.family.unit_preference
+    assert_equal "imperial", user.family.unit_preference
   end
 
-  test "preferences updates unit_preference to 0 (metric)" do
+  test "preferences updates unit_preference to metric" do
     user = users(:john_smith)
-    user.family.update!(unit_preference: 1)
+    user.family.update!(unit_preference: :imperial)
 
     patch "/family/preferences",
-      params: { data: { unit_preference: 0 } },
+      params: { data: { unit_preference: "metric" } },
       headers: auth_headers_for(user),
       as: :json
 
@@ -31,7 +31,7 @@ class FamilyControllerTest < ActionDispatch::IntegrationTest
     json = response.parsed_body
     assert_equal true, json["success"]
     user.reload
-    assert_equal 0, user.family.unit_preference
+    assert_equal "metric", user.family.unit_preference
   end
 
   test "preferences updates affect all family members" do
@@ -40,20 +40,20 @@ class FamilyControllerTest < ActionDispatch::IntegrationTest
     assert_equal user1.family.id, user2.family.id
 
     patch "/family/preferences",
-      params: { data: { unit_preference: 1 } },
+      params: { data: { unit_preference: "imperial" } },
       headers: auth_headers_for(user1),
       as: :json
 
     assert_response :success
     user1.reload
     user2.reload
-    assert_equal 1, user1.family.unit_preference
-    assert_equal 1, user2.family.unit_preference
+    assert_equal "imperial", user1.family.unit_preference
+    assert_equal "imperial", user2.family.unit_preference
   end
 
   test "preferences requires authentication" do
     patch "/family/preferences",
-      params: { data: { unit_preference: 1 } },
+      params: { data: { unit_preference: "imperial" } },
       as: :json
 
     assert_response :unauthorized
@@ -63,7 +63,7 @@ class FamilyControllerTest < ActionDispatch::IntegrationTest
     user = users(:john_smith)
 
     patch "/family/preferences",
-      params: { data: { unit_preference: 99 } },
+      params: { data: { unit_preference: "invalid" } },
       headers: auth_headers_for(user),
       as: :json
 

@@ -27,7 +27,7 @@ class GroceryItemsController < ApplicationController
 
   def generate
     family = @current_user.family
-    system = (family.unit_preference == 1) ? :imperial : :metric
+    system = family.imperial? ? :imperial : :metric
 
     start_date = parse_iso!(params.expect(:start))
     end_date = parse_iso!(params.expect(:end))
