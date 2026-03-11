@@ -602,34 +602,30 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
   test "preview returns recipes with correct structure" do
     user = users(:john_smith)
     recipe = recipes(:pasta_carbonara_smith)
-    schedule_day = ScheduleDay.create!(family: user.family, date: Date.today + 30.days)
-    ScheduleItem.create!(schedule_day: schedule_day, recipe: recipe, kind: :recipe, meal_type: :breakfast)
+    sd = ScheduleDay.create!(family: user.family, date: Date.today + 30.days)
+    ScheduleItem.create!(schedule_day: sd, recipe: recipe, kind: :recipe, meal_type: :breakfast)
 
     get "/grocery_items/preview", params: { start: (Date.today + 30.days).to_s, end: (Date.today + 30.days).to_s }, headers: auth_headers_for(user)
 
     assert_response :success
-    json = response.parsed_body
-    assert json.is_a?(Array)
-    assert json.length > 0
-    entry = json.first
-    assert entry.key?("id")
-    assert entry.key?("name")
-    assert entry.key?("meal_type")
-    assert entry.key?("amount")
-    assert entry.key?("ingredients")
-    assert entry["ingredients"].is_a?(Array)
-    ingredient = entry["ingredients"].first
-    assert ingredient.key?("id")
-    assert ingredient.key?("name")
-    assert ingredient.key?("quantity")
-    assert ingredient.key?("unit")
-    assert_equal "String", entry["id"].class.name
+    assert_equal [
+      {
+        "id"          => recipe.id.to_s,
+        "name"        => "Pasta Carbonara",
+        "meal_type"   => "breakfast",
+        "amount"      => 1,
+        "ingredients" => [
+          { "id" => ingredients(:pasta_carbonara_eggs).id.to_s,  "name" => "Eggs",      "quantity" => 3,   "unit" => "count" },
+          { "id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g" }
+        ]
+      }
+    ], response.parsed_body
   end
 
   test "preview returns correct amount for repeated recipe" do
     user = users(:john_smith)
     recipe = recipes(:pasta_carbonara_smith)
-    (Date.today + 40.days .. Date.today + 42.days).each_with_index do |date, i|
+    (Date.today + 40.days .. Date.today + 42.days).each do |date|
       sd = ScheduleDay.create!(family: user.family, date: date)
       ScheduleItem.create!(schedule_day: sd, recipe: recipe, kind: :recipe, meal_type: :breakfast)
     end
@@ -637,28 +633,42 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     get "/grocery_items/preview", params: { start: (Date.today + 40.days).to_s, end: (Date.today + 42.days).to_s }, headers: auth_headers_for(user)
 
     assert_response :success
-    json = response.parsed_body
-    entry = json.find { |r| r["id"] == recipe.id.to_s }
-    assert_not_nil entry
-    assert_equal 3, entry["amount"]
+    assert_equal [
+      {
+        "id"          => recipe.id.to_s,
+        "name"        => "Pasta Carbonara",
+        "meal_type"   => "breakfast",
+        "amount"      => 3,
+        "ingredients" => [
+          { "id" => ingredients(:pasta_carbonara_eggs).id.to_s,  "name" => "Eggs",      "quantity" => 3,   "unit" => "count" },
+          { "id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g" }
+        ]
+      }
+    ], response.parsed_body
   end
 
   test "preview returns display-converted ingredient quantities for metric family" do
     user = users(:john_smith)
     user.family.update!(unit_preference: :metric)
     recipe = recipes(:pasta_carbonara_smith)
-    schedule_day = ScheduleDay.create!(family: user.family, date: Date.today + 50.days)
-    ScheduleItem.create!(schedule_day: schedule_day, recipe: recipe, kind: :recipe, meal_type: :lunch)
+    sd = ScheduleDay.create!(family: user.family, date: Date.today + 50.days)
+    ScheduleItem.create!(schedule_day: sd, recipe: recipe, kind: :recipe, meal_type: :lunch)
 
     get "/grocery_items/preview", params: { start: (Date.today + 50.days).to_s, end: (Date.today + 50.days).to_s }, headers: auth_headers_for(user)
 
     assert_response :success
-    json = response.parsed_body
-    entry = json.find { |r| r["id"] == recipe.id.to_s }
-    spaghetti = entry["ingredients"].find { |i| i["name"] == "Spaghetti" }
-    assert_not_nil spaghetti
-    assert_equal "g", spaghetti["unit"]
-    assert spaghetti["quantity"].is_a?(Numeric)
+    assert_equal [
+      {
+        "id"          => recipe.id.to_s,
+        "name"        => "Pasta Carbonara",
+        "meal_type"   => "lunch",
+        "amount"      => 1,
+        "ingredients" => [
+          { "id" => ingredients(:pasta_carbonara_eggs).id.to_s,  "name" => "Eggs",      "quantity" => 3,   "unit" => "count" },
+          { "id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g" }
+        ]
+      }
+    ], response.parsed_body
   end
 
   test "preview ingredient quantities are per single recipe not multiplied by amount" do
@@ -672,18 +682,19 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     get "/grocery_items/preview", params: { start: (Date.today + 60.days).to_s, end: (Date.today + 61.days).to_s }, headers: auth_headers_for(user)
 
     assert_response :success
-    json = response.parsed_body
-    entry = json.find { |r| r["id"] == recipe.id.to_s }
-    assert_equal 2, entry["amount"]
-
-    spaghetti_preview = entry["ingredients"].find { |i| i["name"] == "Spaghetti" }
-    sd_single = ScheduleDay.create!(family: user.family, date: Date.today + 90.days)
-    ScheduleItem.create!(schedule_day: sd_single, recipe: recipe, kind: :recipe, meal_type: :breakfast)
-    get "/grocery_items/preview", params: { start: (Date.today + 90.days).to_s, end: (Date.today + 90.days).to_s }, headers: auth_headers_for(user)
-    json_single = response.parsed_body
-    spaghetti_single = json_single.find { |r| r["id"] == recipe.id.to_s }["ingredients"].find { |i| i["name"] == "Spaghetti" }
-
-    assert_equal spaghetti_single["quantity"], spaghetti_preview["quantity"]
+    # amount is 2 but ingredient quantities are still for ONE recipe — not doubled
+    assert_equal [
+      {
+        "id"          => recipe.id.to_s,
+        "name"        => "Pasta Carbonara",
+        "meal_type"   => "breakfast",
+        "amount"      => 2,
+        "ingredients" => [
+          { "id" => ingredients(:pasta_carbonara_eggs).id.to_s,  "name" => "Eggs",      "quantity" => 3,   "unit" => "count" },
+          { "id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g" }
+        ]
+      }
+    ], response.parsed_body
   end
 
   test "preview excludes dining out schedule items" do
@@ -716,16 +727,24 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     user = users(:john_smith)
     user.family.update!(unit_preference: :imperial)
     recipe = recipes(:pasta_carbonara_smith)
-    schedule_day = ScheduleDay.create!(family: user.family, date: Date.today + 85.days)
-    ScheduleItem.create!(schedule_day: schedule_day, recipe: recipe, kind: :recipe, meal_type: :dinner)
+    sd = ScheduleDay.create!(family: user.family, date: Date.today + 85.days)
+    ScheduleItem.create!(schedule_day: sd, recipe: recipe, kind: :recipe, meal_type: :dinner)
 
     get "/grocery_items/preview", params: { start: (Date.today + 85.days).to_s, end: (Date.today + 85.days).to_s }, headers: auth_headers_for(user)
 
     assert_response :success
-    json = response.parsed_body
-    entry = json.find { |r| r["id"] == recipe.id.to_s }
-    spaghetti = entry["ingredients"].find { |i| i["name"] == "Spaghetti" }
-    assert_not_nil spaghetti
-    assert_equal "oz", spaghetti["unit"]
+    # 400g → 400 * 0.035274 = 14.1096 oz → round_oz (≥4 → ceil) = 15.0 oz
+    assert_equal [
+      {
+        "id"          => recipe.id.to_s,
+        "name"        => "Pasta Carbonara",
+        "meal_type"   => "dinner",
+        "amount"      => 1,
+        "ingredients" => [
+          { "id" => ingredients(:pasta_carbonara_eggs).id.to_s,  "name" => "Eggs",      "quantity" => 3,    "unit" => "count" },
+          { "id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 15.0, "unit" => "oz" }
+        ]
+      }
+    ], response.parsed_body
   end
 end
