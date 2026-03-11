@@ -8,6 +8,7 @@ class GroceryItemSerializer
       quantity: display_qty,
       aisle: grocery_item.aisle,
       unit: display_unit,
+      formatted_unit: UnitConverter.pretty_unit(display_qty, display_unit),
       status: grocery_item.status
     }
   end

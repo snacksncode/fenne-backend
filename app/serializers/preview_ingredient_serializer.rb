@@ -7,7 +7,8 @@ class PreviewIngredientSerializer
       id: ingredient.id.to_s,
       name: ingredient.name,
       quantity: display_qty,
-      unit: display_unit
+      unit: display_unit,
+      formatted_unit: UnitConverter.pretty_unit(display_qty, display_unit)
     }
   end
 end

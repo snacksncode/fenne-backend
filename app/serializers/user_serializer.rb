@@ -3,7 +3,7 @@ class UserSerializer
     {
       id: user.id.to_s,
       email: user.email,
-      name: user.name,
+      name: user.name
     }
   end
 end

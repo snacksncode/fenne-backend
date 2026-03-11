@@ -133,7 +133,7 @@ module UnitConverter
     [qty.ceil, 1].max
   end
 
-  # Returns a display-friendly [quantity, unit_string] pair.
+  # Returns a display-friendly [quantity, unit_symbol] pair.
   # Rounds base unit FIRST, then checks cascade threshold on the rounded value,
   # then rounds in the target unit. This ensures e.g. 7.6 fl oz → 8.0 → cup.
   def self.friendly(quantity, base_unit, system)
@@ -142,57 +142,68 @@ module UnitConverter
       when :g
         rounded = round_g(quantity)
         if rounded >= 1000
-          [round_kg(rounded / 1000.0), "kg"]
+          [round_kg(rounded / 1000.0), :kg]
         else
-          [rounded, "g"]
+          [rounded, :g]
         end
       when :ml
         rounded = round_ml(quantity)
         if rounded >= 1000
-          [round_l(rounded / 1000.0), "l"]
+          [round_l(rounded / 1000.0), :l]
         else
-          [rounded, "ml"]
+          [rounded, :ml]
         end
       when :tsp
         rounded = round_tsp(quantity)
         if rounded >= 3
-          [round_tbsp(rounded / 3.0), "tbsp"]
+          [round_tbsp(rounded / 3.0), :tbsp]
         else
-          [rounded, "tsp"]
+          [rounded, :tsp]
         end
       else # :count
-        rounded = round_count(quantity)
-        [rounded, (rounded == 1) ? "pc" : "pcs"]
+        [round_count(quantity), :count]
       end
     else # imperial
       case base_unit
       when :oz
         rounded = round_oz(quantity)
         if rounded >= 16
-          [round_lb(rounded / 16.0), "lb"]
+          [round_lb(rounded / 16.0), :lb]
         else
-          [rounded, "oz"]
+          [rounded, :oz]
         end
       when :fl_oz
         rounded = round_fl_oz(quantity)
         if rounded >= 32
-          [round_qt(rounded / 32.0), "qt"]
+          [round_qt(rounded / 32.0), :qt]
         elsif rounded >= 8
-          [round_cup(rounded / 8.0), "cup"]
+          [round_cup(rounded / 8.0), :cup]
         else
-          [rounded, "fl oz"]
+          [rounded, :fl_oz]
         end
       when :tsp
         rounded = round_tsp(quantity)
         if rounded >= 3
-          [round_tbsp(rounded / 3.0), "tbsp"]
+          [round_tbsp(rounded / 3.0), :tbsp]
         else
-          [rounded, "tsp"]
+          [rounded, :tsp]
         end
       else # :count
-        rounded = round_count(quantity)
-        [rounded, (rounded == 1) ? "pc" : "pcs"]
+        [round_count(quantity), :count]
       end
+    end
+  end
+
+  # Returns a human-readable label for a unit symbol.
+  # quantity is needed only for :count (singular vs plural).
+  def self.pretty_unit(quantity, unit)
+    case unit
+    when :count
+      (quantity == 1) ? "pc" : "pcs"
+    when :fl_oz
+      "fl oz"
+    else
+      unit.to_s
     end
   end
 end
