@@ -311,7 +311,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     user = users(:john_smith)
     recipe_a = recipes(:pasta_carbonara_smith)
     recipe_b = recipes(:scrambled_eggs_smith)
-    
+
     # Create ingredient for recipe_a: Flour 500g
     flour_a = Ingredient.create!(
       recipe: recipe_a,
@@ -320,7 +320,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
       unit: :g,
       aisle: :produce
     )
-    
+
     # Create ingredient for recipe_b: Flour 300g
     flour_b = Ingredient.create!(
       recipe: recipe_b,
@@ -329,12 +329,12 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
       unit: :g,
       aisle: :produce
     )
-    
+
     # Schedule both recipes
     schedule_day = ScheduleDay.create!(family: user.family, date: Date.today)
     ScheduleItem.create!(schedule_day: schedule_day, recipe: recipe_a, kind: :recipe, meal_type: :breakfast)
     ScheduleItem.create!(schedule_day: schedule_day, recipe: recipe_b, kind: :recipe, meal_type: :lunch)
-    
+
     assert_difference("user.family.grocery_items.count", 1) do
       post "/grocery_items/generate",
         params: {start: Date.today.to_s, end: Date.today.to_s, ingredients: {flour_a.id.to_s => 1, flour_b.id.to_s => 1}},
@@ -352,7 +352,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     user = users(:john_smith)
     recipe_a = recipes(:pasta_carbonara_smith)
     recipe_b = recipes(:scrambled_eggs_smith)
-    
+
     # Create ingredient for recipe_a: Avocado 200g (weight)
     avocado_a = Ingredient.create!(
       recipe: recipe_a,
@@ -361,7 +361,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
       unit: :g,
       aisle: :produce
     )
-    
+
     # Create ingredient for recipe_b: Avocado 1 count
     avocado_b = Ingredient.create!(
       recipe: recipe_b,
@@ -370,12 +370,12 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
       unit: :count,
       aisle: :produce
     )
-    
+
     # Schedule both recipes
     schedule_day = ScheduleDay.create!(family: user.family, date: Date.today)
     ScheduleItem.create!(schedule_day: schedule_day, recipe: recipe_a, kind: :recipe, meal_type: :breakfast)
     ScheduleItem.create!(schedule_day: schedule_day, recipe: recipe_b, kind: :recipe, meal_type: :lunch)
-    
+
     post "/grocery_items/generate",
       params: {start: Date.today.to_s, end: Date.today.to_s, ingredients: {avocado_a.id.to_s => 1, avocado_b.id.to_s => 1}},
       headers: auth_headers_for(user),
@@ -383,7 +383,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     avocados = GroceryItem.where(name: "Avocado").order(:unit)
-    assert_equal 2, avocados.count, "Expected 2 avocado items but got #{avocados.count}. Items: #{avocados.map { |a| "#{a.name} #{a.quantity}#{a.unit}" }.join(', ')}"
+    assert_equal 2, avocados.count, "Expected 2 avocado items but got #{avocados.count}. Items: #{avocados.map { |a| "#{a.name} #{a.quantity}#{a.unit}" }.join(", ")}"
     assert_equal "count", avocados.last.unit.to_s
     assert_equal "g", avocados.first.unit.to_s
   end
@@ -392,7 +392,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     user = users(:john_smith)
     recipe_a = recipes(:pasta_carbonara_smith)
     recipe_b = recipes(:scrambled_eggs_smith)
-    
+
     # Create ingredient for recipe_a: Flour 500g
     flour_a = Ingredient.create!(
       recipe: recipe_a,
@@ -401,7 +401,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
       unit: :g,
       aisle: :produce
     )
-    
+
     # Create ingredient for recipe_b: flour 300g (lowercase)
     flour_b = Ingredient.create!(
       recipe: recipe_b,
@@ -410,12 +410,12 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
       unit: :g,
       aisle: :produce
     )
-    
+
     # Schedule both recipes
     schedule_day = ScheduleDay.create!(family: user.family, date: Date.today)
     ScheduleItem.create!(schedule_day: schedule_day, recipe: recipe_a, kind: :recipe, meal_type: :breakfast)
     ScheduleItem.create!(schedule_day: schedule_day, recipe: recipe_b, kind: :recipe, meal_type: :lunch)
-    
+
     assert_difference("user.family.grocery_items.count", 1) do
       post "/grocery_items/generate",
         params: {start: Date.today.to_s, end: Date.today.to_s, ingredients: {flour_a.id.to_s => 1, flour_b.id.to_s => 1}},
@@ -432,7 +432,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     user = users(:john_smith)
     user.family.update!(unit_preference: :imperial) # imperial
     recipe = recipes(:pasta_carbonara_smith)
-    
+
     # Create ingredient: Flour 100g
     flour = Ingredient.create!(
       recipe: recipe,
@@ -441,11 +441,11 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
       unit: :g,
       aisle: :produce
     )
-    
+
     # Schedule recipe
     schedule_day = ScheduleDay.create!(family: user.family, date: Date.today)
     ScheduleItem.create!(schedule_day: schedule_day, recipe: recipe, kind: :recipe, meal_type: :breakfast)
-    
+
     assert_difference("user.family.grocery_items.count", 1) do
       post "/grocery_items/generate",
         params: {start: Date.today.to_s, end: Date.today.to_s, ingredients: {flour.id.to_s => 1}},
@@ -536,7 +536,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     json = response.parsed_body
     assert_equal 1, json["quantity"]
-    assert_equal "count", json["unit"]
+    assert_equal "pc", json["unit"]
   end
 
   test "index applies display conversion for all items" do
@@ -573,7 +573,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
   # GET /grocery_items/preview
   test "preview requires authentication" do
-    get "/grocery_items/preview", params: { start: Date.today.to_s, end: Date.today.to_s }
+    get "/grocery_items/preview", params: {start: Date.today.to_s, end: Date.today.to_s}
     assert_response :unauthorized
   end
 
@@ -585,7 +585,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "preview rejects invalid date format" do
     user = users(:john_smith)
-    get "/grocery_items/preview", params: { start: "not-a-date", end: Date.today.to_s }, headers: auth_headers_for(user)
+    get "/grocery_items/preview", params: {start: "not-a-date", end: Date.today.to_s}, headers: auth_headers_for(user)
     assert_response :bad_request
     json = response.parsed_body
     assert json["error"].present?
@@ -593,7 +593,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "preview returns empty array when no recipes scheduled" do
     user = users(:john_smith)
-    get "/grocery_items/preview", params: { start: "2099-01-01", end: "2099-01-07" }, headers: auth_headers_for(user)
+    get "/grocery_items/preview", params: {start: "2099-01-01", end: "2099-01-07"}, headers: auth_headers_for(user)
     assert_response :success
     json = response.parsed_body
     assert_equal [], json
@@ -605,18 +605,18 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     sd = ScheduleDay.create!(family: user.family, date: Date.today + 30.days)
     ScheduleItem.create!(schedule_day: sd, recipe: recipe, kind: :recipe, meal_type: :breakfast)
 
-    get "/grocery_items/preview", params: { start: (Date.today + 30.days).to_s, end: (Date.today + 30.days).to_s }, headers: auth_headers_for(user)
+    get "/grocery_items/preview", params: {start: (Date.today + 30.days).to_s, end: (Date.today + 30.days).to_s}, headers: auth_headers_for(user)
 
     assert_response :success
     assert_equal [
       {
-        "id"          => recipe.id.to_s,
-        "name"        => "Pasta Carbonara",
-        "meal_type"   => "breakfast",
-        "amount"      => 1,
+        "id" => recipe.id.to_s,
+        "name" => "Pasta Carbonara",
+        "meal_type" => "breakfast",
+        "amount" => 1,
         "ingredients" => [
-          { "id" => ingredients(:pasta_carbonara_eggs).id.to_s,  "name" => "Eggs",      "quantity" => 3,   "unit" => "count" },
-          { "id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g" }
+          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "pcs"},
+          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g"}
         ]
       }
     ], response.parsed_body
@@ -625,23 +625,23 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
   test "preview returns correct amount for repeated recipe" do
     user = users(:john_smith)
     recipe = recipes(:pasta_carbonara_smith)
-    (Date.today + 40.days .. Date.today + 42.days).each do |date|
+    (Date.today + 40.days..Date.today + 42.days).each do |date|
       sd = ScheduleDay.create!(family: user.family, date: date)
       ScheduleItem.create!(schedule_day: sd, recipe: recipe, kind: :recipe, meal_type: :breakfast)
     end
 
-    get "/grocery_items/preview", params: { start: (Date.today + 40.days).to_s, end: (Date.today + 42.days).to_s }, headers: auth_headers_for(user)
+    get "/grocery_items/preview", params: {start: (Date.today + 40.days).to_s, end: (Date.today + 42.days).to_s}, headers: auth_headers_for(user)
 
     assert_response :success
     assert_equal [
       {
-        "id"          => recipe.id.to_s,
-        "name"        => "Pasta Carbonara",
-        "meal_type"   => "breakfast",
-        "amount"      => 3,
+        "id" => recipe.id.to_s,
+        "name" => "Pasta Carbonara",
+        "meal_type" => "breakfast",
+        "amount" => 3,
         "ingredients" => [
-          { "id" => ingredients(:pasta_carbonara_eggs).id.to_s,  "name" => "Eggs",      "quantity" => 3,   "unit" => "count" },
-          { "id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g" }
+          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "pcs"},
+          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g"}
         ]
       }
     ], response.parsed_body
@@ -654,18 +654,18 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     sd = ScheduleDay.create!(family: user.family, date: Date.today + 50.days)
     ScheduleItem.create!(schedule_day: sd, recipe: recipe, kind: :recipe, meal_type: :lunch)
 
-    get "/grocery_items/preview", params: { start: (Date.today + 50.days).to_s, end: (Date.today + 50.days).to_s }, headers: auth_headers_for(user)
+    get "/grocery_items/preview", params: {start: (Date.today + 50.days).to_s, end: (Date.today + 50.days).to_s}, headers: auth_headers_for(user)
 
     assert_response :success
     assert_equal [
       {
-        "id"          => recipe.id.to_s,
-        "name"        => "Pasta Carbonara",
-        "meal_type"   => "lunch",
-        "amount"      => 1,
+        "id" => recipe.id.to_s,
+        "name" => "Pasta Carbonara",
+        "meal_type" => "lunch",
+        "amount" => 1,
         "ingredients" => [
-          { "id" => ingredients(:pasta_carbonara_eggs).id.to_s,  "name" => "Eggs",      "quantity" => 3,   "unit" => "count" },
-          { "id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g" }
+          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "pcs"},
+          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g"}
         ]
       }
     ], response.parsed_body
@@ -679,19 +679,19 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
       ScheduleItem.create!(schedule_day: sd, recipe: recipe, kind: :recipe, meal_type: :breakfast)
     end
 
-    get "/grocery_items/preview", params: { start: (Date.today + 60.days).to_s, end: (Date.today + 61.days).to_s }, headers: auth_headers_for(user)
+    get "/grocery_items/preview", params: {start: (Date.today + 60.days).to_s, end: (Date.today + 61.days).to_s}, headers: auth_headers_for(user)
 
     assert_response :success
     # amount is 2 but ingredient quantities are still for ONE recipe — not doubled
     assert_equal [
       {
-        "id"          => recipe.id.to_s,
-        "name"        => "Pasta Carbonara",
-        "meal_type"   => "breakfast",
-        "amount"      => 2,
+        "id" => recipe.id.to_s,
+        "name" => "Pasta Carbonara",
+        "meal_type" => "breakfast",
+        "amount" => 2,
         "ingredients" => [
-          { "id" => ingredients(:pasta_carbonara_eggs).id.to_s,  "name" => "Eggs",      "quantity" => 3,   "unit" => "count" },
-          { "id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g" }
+          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "pcs"},
+          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g"}
         ]
       }
     ], response.parsed_body
@@ -702,7 +702,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     schedule_day = ScheduleDay.create!(family: user.family, date: Date.today + 70.days)
     ScheduleItem.create!(schedule_day: schedule_day, kind: :dining_out, dining_out_name: "Pizza Place", meal_type: :dinner)
 
-    get "/grocery_items/preview", params: { start: (Date.today + 70.days).to_s, end: (Date.today + 70.days).to_s }, headers: auth_headers_for(user)
+    get "/grocery_items/preview", params: {start: (Date.today + 70.days).to_s, end: (Date.today + 70.days).to_s}, headers: auth_headers_for(user)
 
     assert_response :success
     json = response.parsed_body
@@ -716,7 +716,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     sd = ScheduleDay.create!(family: other_family, date: Date.today + 80.days)
     ScheduleItem.create!(schedule_day: sd, recipe: other_recipe, kind: :recipe, meal_type: :dinner)
 
-    get "/grocery_items/preview", params: { start: (Date.today + 80.days).to_s, end: (Date.today + 80.days).to_s }, headers: auth_headers_for(user)
+    get "/grocery_items/preview", params: {start: (Date.today + 80.days).to_s, end: (Date.today + 80.days).to_s}, headers: auth_headers_for(user)
 
     assert_response :success
     json = response.parsed_body
@@ -730,19 +730,19 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     sd = ScheduleDay.create!(family: user.family, date: Date.today + 85.days)
     ScheduleItem.create!(schedule_day: sd, recipe: recipe, kind: :recipe, meal_type: :dinner)
 
-    get "/grocery_items/preview", params: { start: (Date.today + 85.days).to_s, end: (Date.today + 85.days).to_s }, headers: auth_headers_for(user)
+    get "/grocery_items/preview", params: {start: (Date.today + 85.days).to_s, end: (Date.today + 85.days).to_s}, headers: auth_headers_for(user)
 
     assert_response :success
     # 400g → 400 * 0.035274 = 14.1096 oz → round_oz (≥4 → ceil) = 15.0 oz
     assert_equal [
       {
-        "id"          => recipe.id.to_s,
-        "name"        => "Pasta Carbonara",
-        "meal_type"   => "dinner",
-        "amount"      => 1,
+        "id" => recipe.id.to_s,
+        "name" => "Pasta Carbonara",
+        "meal_type" => "dinner",
+        "amount" => 1,
         "ingredients" => [
-          { "id" => ingredients(:pasta_carbonara_eggs).id.to_s,  "name" => "Eggs",      "quantity" => 3,    "unit" => "count" },
-          { "id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 15.0, "unit" => "oz" }
+          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "pcs"},
+          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 15.0, "unit" => "oz"}
         ]
       }
     ], response.parsed_body

@@ -34,27 +34,27 @@ class UnitConverterTest < ActiveSupport::TestCase
   # ---------------------------------------------------------------------------
 
   test "to_base converts metric weight units to grams" do
-    assert_equal [ 1.0, :g ], UnitConverter.to_base(1, :g, :metric)
-    assert_equal [ 1000.0, :g ], UnitConverter.to_base(1, :kg, :metric)
-    assert_equal [ 28.3495, :g ], UnitConverter.to_base(1, :oz, :metric)
-    assert_equal [ 453.592, :g ], UnitConverter.to_base(1, :lb, :metric)
+    assert_equal [1.0, :g], UnitConverter.to_base(1, :g, :metric)
+    assert_equal [1000.0, :g], UnitConverter.to_base(1, :kg, :metric)
+    assert_equal [28.3495, :g], UnitConverter.to_base(1, :oz, :metric)
+    assert_equal [453.592, :g], UnitConverter.to_base(1, :lb, :metric)
   end
 
   test "to_base converts metric fluid units to ml" do
-    assert_equal [ 1.0, :ml ], UnitConverter.to_base(1, :ml, :metric)
-    assert_equal [ 1000.0, :ml ], UnitConverter.to_base(1, :l, :metric)
-    assert_equal [ 29.5735, :ml ], UnitConverter.to_base(1, :fl_oz, :metric)
-    assert_equal [ 236.588, :ml ], UnitConverter.to_base(1, :cup, :metric)
-    assert_equal [ 946.353, :ml ], UnitConverter.to_base(1, :qt, :metric)
+    assert_equal [1.0, :ml], UnitConverter.to_base(1, :ml, :metric)
+    assert_equal [1000.0, :ml], UnitConverter.to_base(1, :l, :metric)
+    assert_equal [29.5735, :ml], UnitConverter.to_base(1, :fl_oz, :metric)
+    assert_equal [236.588, :ml], UnitConverter.to_base(1, :cup, :metric)
+    assert_equal [946.353, :ml], UnitConverter.to_base(1, :qt, :metric)
   end
 
   test "to_base converts metric spoon units to tsp" do
-    assert_equal [ 1.0, :tsp ], UnitConverter.to_base(1, :tsp, :metric)
-    assert_equal [ 3.0, :tsp ], UnitConverter.to_base(1, :tbsp, :metric)
+    assert_equal [1.0, :tsp], UnitConverter.to_base(1, :tsp, :metric)
+    assert_equal [3.0, :tsp], UnitConverter.to_base(1, :tbsp, :metric)
   end
 
   test "to_base converts metric count to count" do
-    assert_equal [ 1.0, :count ], UnitConverter.to_base(1, :count, :metric)
+    assert_equal [1.0, :count], UnitConverter.to_base(1, :count, :metric)
   end
 
   test "to_base scales quantity correctly (metric)" do
@@ -68,27 +68,27 @@ class UnitConverterTest < ActiveSupport::TestCase
   # ---------------------------------------------------------------------------
 
   test "to_base converts imperial weight units to oz" do
-    assert_equal [ 1.0, :oz ], UnitConverter.to_base(1, :oz, :imperial)
-    assert_equal [ 16.0, :oz ], UnitConverter.to_base(1, :lb, :imperial)
-    assert_equal [ 0.035274, :oz ], UnitConverter.to_base(1, :g, :imperial)
-    assert_equal [ 35.274, :oz ], UnitConverter.to_base(1, :kg, :imperial)
+    assert_equal [1.0, :oz], UnitConverter.to_base(1, :oz, :imperial)
+    assert_equal [16.0, :oz], UnitConverter.to_base(1, :lb, :imperial)
+    assert_equal [0.035274, :oz], UnitConverter.to_base(1, :g, :imperial)
+    assert_equal [35.274, :oz], UnitConverter.to_base(1, :kg, :imperial)
   end
 
   test "to_base converts imperial fluid units to fl_oz" do
-    assert_equal [ 1.0, :fl_oz ], UnitConverter.to_base(1, :fl_oz, :imperial)
-    assert_equal [ 8.0, :fl_oz ], UnitConverter.to_base(1, :cup, :imperial)
-    assert_equal [ 32.0, :fl_oz ], UnitConverter.to_base(1, :qt, :imperial)
-    assert_equal [ 0.033814, :fl_oz ], UnitConverter.to_base(1, :ml, :imperial)
-    assert_equal [ 33.814, :fl_oz ], UnitConverter.to_base(1, :l, :imperial)
+    assert_equal [1.0, :fl_oz], UnitConverter.to_base(1, :fl_oz, :imperial)
+    assert_equal [8.0, :fl_oz], UnitConverter.to_base(1, :cup, :imperial)
+    assert_equal [32.0, :fl_oz], UnitConverter.to_base(1, :qt, :imperial)
+    assert_equal [0.033814, :fl_oz], UnitConverter.to_base(1, :ml, :imperial)
+    assert_equal [33.814, :fl_oz], UnitConverter.to_base(1, :l, :imperial)
   end
 
   test "to_base converts imperial spoon units to tsp" do
-    assert_equal [ 1.0, :tsp ], UnitConverter.to_base(1, :tsp, :imperial)
-    assert_equal [ 3.0, :tsp ], UnitConverter.to_base(1, :tbsp, :imperial)
+    assert_equal [1.0, :tsp], UnitConverter.to_base(1, :tsp, :imperial)
+    assert_equal [3.0, :tsp], UnitConverter.to_base(1, :tbsp, :imperial)
   end
 
   test "to_base converts imperial count to count" do
-    assert_equal [ 1.0, :count ], UnitConverter.to_base(1, :count, :imperial)
+    assert_equal [1.0, :count], UnitConverter.to_base(1, :count, :imperial)
   end
 
   # ---------------------------------------------------------------------------
@@ -176,15 +176,15 @@ class UnitConverterTest < ActiveSupport::TestCase
   # ---------------------------------------------------------------------------
 
   test "friendly metric weight stays in grams below 1000" do
-    assert_equal [ 500.0, "g" ], UnitConverter.friendly(500, :g, :metric)
+    assert_equal [500.0, "g"], UnitConverter.friendly(500, :g, :metric)
   end
 
   test "friendly metric weight cascades to kg at exactly 1000g" do
-    assert_equal [ 1.0, "kg" ], UnitConverter.friendly(1000, :g, :metric)
+    assert_equal [1.0, "kg"], UnitConverter.friendly(1000, :g, :metric)
   end
 
   test "friendly metric weight cascades to kg above 1000g" do
-    assert_equal [ 1.5, "kg" ], UnitConverter.friendly(1500, :g, :metric)
+    assert_equal [1.5, "kg"], UnitConverter.friendly(1500, :g, :metric)
   end
 
   # ---------------------------------------------------------------------------
@@ -192,11 +192,11 @@ class UnitConverterTest < ActiveSupport::TestCase
   # ---------------------------------------------------------------------------
 
   test "friendly metric fluid stays in ml below 1000" do
-    assert_equal [ 500.0, "ml" ], UnitConverter.friendly(500, :ml, :metric)
+    assert_equal [500.0, "ml"], UnitConverter.friendly(500, :ml, :metric)
   end
 
   test "friendly metric fluid cascades to l at exactly 1000ml" do
-    assert_equal [ 1.0, "l" ], UnitConverter.friendly(1000, :ml, :metric)
+    assert_equal [1.0, "l"], UnitConverter.friendly(1000, :ml, :metric)
   end
 
   # ---------------------------------------------------------------------------
@@ -204,19 +204,19 @@ class UnitConverterTest < ActiveSupport::TestCase
   # ---------------------------------------------------------------------------
 
   test "friendly metric spoon stays in tsp below 3" do
-    assert_equal [ 2.0, "tsp" ], UnitConverter.friendly(2, :tsp, :metric)
+    assert_equal [2.0, "tsp"], UnitConverter.friendly(2, :tsp, :metric)
   end
 
   test "friendly metric spoon cascades to tbsp at exactly 3 tsp" do
-    assert_equal [ 1.0, "tbsp" ], UnitConverter.friendly(3, :tsp, :metric)
+    assert_equal [1.0, "tbsp"], UnitConverter.friendly(3, :tsp, :metric)
   end
 
   test "friendly imperial spoon stays in tsp below 3" do
-    assert_equal [ 2.0, "tsp" ], UnitConverter.friendly(2, :tsp, :imperial)
+    assert_equal [2.0, "tsp"], UnitConverter.friendly(2, :tsp, :imperial)
   end
 
   test "friendly imperial spoon cascades to tbsp at exactly 3 tsp" do
-    assert_equal [ 1.0, "tbsp" ], UnitConverter.friendly(3, :tsp, :imperial)
+    assert_equal [1.0, "tbsp"], UnitConverter.friendly(3, :tsp, :imperial)
   end
 
   # ---------------------------------------------------------------------------
@@ -224,11 +224,11 @@ class UnitConverterTest < ActiveSupport::TestCase
   # ---------------------------------------------------------------------------
 
   test "friendly imperial weight stays in oz below 16" do
-    assert_equal [ 10.0, "oz" ], UnitConverter.friendly(10, :oz, :imperial)
+    assert_equal [10.0, "oz"], UnitConverter.friendly(10, :oz, :imperial)
   end
 
   test "friendly imperial weight cascades to lb above 16 oz" do
-    assert_equal [ 5.0, "lb" ], UnitConverter.friendly(80, :oz, :imperial)
+    assert_equal [5.0, "lb"], UnitConverter.friendly(80, :oz, :imperial)
   end
 
   # ---------------------------------------------------------------------------
@@ -236,15 +236,15 @@ class UnitConverterTest < ActiveSupport::TestCase
   # ---------------------------------------------------------------------------
 
   test "friendly imperial fluid stays in fl oz below 8" do
-    assert_equal [ 4.0, "fl oz" ], UnitConverter.friendly(4, :fl_oz, :imperial)
+    assert_equal [4.0, "fl oz"], UnitConverter.friendly(4, :fl_oz, :imperial)
   end
 
   test "friendly imperial fluid cascades to cup at exactly 8 fl oz" do
-    assert_equal [ 1.0, "cup" ], UnitConverter.friendly(8, :fl_oz, :imperial)
+    assert_equal [1.0, "cup"], UnitConverter.friendly(8, :fl_oz, :imperial)
   end
 
   test "friendly imperial fluid cascades to qt above 32 fl oz" do
-    assert_equal [ 5.0, "qt" ], UnitConverter.friendly(160, :fl_oz, :imperial)
+    assert_equal [5.0, "qt"], UnitConverter.friendly(160, :fl_oz, :imperial)
   end
 
   # ---------------------------------------------------------------------------
@@ -252,8 +252,8 @@ class UnitConverterTest < ActiveSupport::TestCase
   # ---------------------------------------------------------------------------
 
   test "friendly count returns integer with count label" do
-    assert_equal [ 5, "count" ], UnitConverter.friendly(5, :count, :metric)
-    assert_equal [ 5, "count" ], UnitConverter.friendly(5, :count, :imperial)
+    assert_equal [5, "pcs"], UnitConverter.friendly(5, :count, :metric)
+    assert_equal [5, "pcs"], UnitConverter.friendly(5, :count, :imperial)
   end
 
   # ---------------------------------------------------------------------------
@@ -262,27 +262,27 @@ class UnitConverterTest < ActiveSupport::TestCase
 
   # 7.6 fl oz rounds to 8.0 fl oz, which >= 8 threshold → 1 cup (not "8 fl oz")
   test "friendly cascades fl_oz to cup when rounding hits threshold" do
-    assert_equal [ 1.0, "cup" ], UnitConverter.friendly(7.6, :fl_oz, :imperial)
+    assert_equal [1.0, "cup"], UnitConverter.friendly(7.6, :fl_oz, :imperial)
   end
 
   # 2.8 tsp rounds to 3.0, which >= 3 → 1 tbsp
   test "friendly cascades tsp to tbsp when rounding hits threshold" do
-    assert_equal [ 1.0, "tbsp" ], UnitConverter.friendly(2.8, :tsp, :metric)
-    assert_equal [ 1.0, "tbsp" ], UnitConverter.friendly(2.8, :tsp, :imperial)
+    assert_equal [1.0, "tbsp"], UnitConverter.friendly(2.8, :tsp, :metric)
+    assert_equal [1.0, "tbsp"], UnitConverter.friendly(2.8, :tsp, :imperial)
   end
 
   # 950g rounds to 1000g → cascades to 1 kg
   test "friendly cascades g to kg when rounding hits 1000" do
-    assert_equal [ 1.0, "kg" ], UnitConverter.friendly(950, :g, :metric)
+    assert_equal [1.0, "kg"], UnitConverter.friendly(950, :g, :metric)
   end
 
   # 1100g → round_g(1100) = 1100 → kg: round_kg(1.1) = 1.1 (NOT 1.5 — using 0.1 steps)
   test "friendly kg uses 0.1 steps not 0.5" do
-    assert_equal [ 1.1, "kg" ], UnitConverter.friendly(1100, :g, :metric)
+    assert_equal [1.1, "kg"], UnitConverter.friendly(1100, :g, :metric)
   end
 
   # 15 fl oz → round to 15.0 → >= 8 → cup: 15/8=1.875 → round_cup = 2.0
   test "friendly rounds cascaded cup value" do
-    assert_equal [ 2.0, "cup" ], UnitConverter.friendly(15, :fl_oz, :imperial)
+    assert_equal [2.0, "cup"], UnitConverter.friendly(15, :fl_oz, :imperial)
   end
 end

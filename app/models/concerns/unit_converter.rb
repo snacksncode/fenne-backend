@@ -161,7 +161,8 @@ module UnitConverter
           [rounded, "tsp"]
         end
       else # :count
-        [round_count(quantity), "count"]
+        rounded = round_count(quantity)
+        [rounded, (rounded == 1) ? "pc" : "pcs"]
       end
     else # imperial
       case base_unit
@@ -189,7 +190,8 @@ module UnitConverter
           [rounded, "tsp"]
         end
       else # :count
-        [round_count(quantity), "count"]
+        rounded = round_count(quantity)
+        [rounded, (rounded == 1) ? "pc" : "pcs"]
       end
     end
   end
