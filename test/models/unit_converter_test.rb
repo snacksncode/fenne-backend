@@ -286,26 +286,4 @@ class UnitConverterTest < ActiveSupport::TestCase
     assert_equal [2.0, :cup], UnitConverter.friendly(15, :fl_oz, :imperial)
   end
 
-  # ---------------------------------------------------------------------------
-  # pretty_unit() — human-readable labels
-  # ---------------------------------------------------------------------------
-
-  test "pretty_unit returns pc for count of 1" do
-    assert_equal "pc", UnitConverter.pretty_unit(1, :count)
-  end
-
-  test "pretty_unit returns pcs for count greater than 1" do
-    assert_equal "pcs", UnitConverter.pretty_unit(3, :count)
-    assert_equal "pcs", UnitConverter.pretty_unit(5, :count)
-  end
-
-  test "pretty_unit returns fl oz string for :fl_oz" do
-    assert_equal "fl oz", UnitConverter.pretty_unit(2.0, :fl_oz)
-  end
-
-  test "pretty_unit returns symbol string for all other units" do
-    assert_equal "kg", UnitConverter.pretty_unit(1.5, :kg)
-    assert_equal "g", UnitConverter.pretty_unit(400, :g)
-    assert_equal "qt", UnitConverter.pretty_unit(1.0, :qt)
-  end
 end

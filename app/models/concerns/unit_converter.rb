@@ -194,16 +194,4 @@ module UnitConverter
     end
   end
 
-  # Returns a human-readable label for a unit symbol.
-  # quantity is needed only for :count (singular vs plural).
-  def self.pretty_unit(quantity, unit)
-    case unit
-    when :count
-      (quantity == 1) ? "pc" : "pcs"
-    when :fl_oz
-      "fl oz"
-    else
-      unit.to_s
-    end
-  end
 end
