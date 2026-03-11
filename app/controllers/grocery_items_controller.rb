@@ -1,10 +1,23 @@
 class GroceryItemsController < ApplicationController
+  class GenerateContract < Dry::Validation::Contract
+    params do
+      required(:ingredients).filled(:hash)
+    end
+
+    rule(:ingredients) do
+      value.each do |ingredient_id, count|
+        key([:ingredients, ingredient_id]).failure("must be a string") unless ingredient_id.is_a?(String)
+        key([:ingredients, ingredient_id]).failure("must be a positive number") unless count.is_a?(Numeric) && count > 0
+      end
+    end
+  end
+
   def index
-    render json: GroceryItemSerializer.render_many(grocery_items)
+    render json: GroceryItemSerializer.render_many(grocery_items, unit_preference: @current_user.family.unit_preference)
   end
 
   def show
-    render json: GroceryItemSerializer.render(grocery_item)
+    render json: GroceryItemSerializer.render(grocery_item, unit_preference: @current_user.family.unit_preference)
   end
 
   def destroy
@@ -14,26 +27,34 @@ class GroceryItemsController < ApplicationController
 
   def generate
     family = @current_user.family
+    system = (family.unit_preference == 1) ? :imperial : :metric
 
     start_date = parse_iso!(params.expect(:start))
     end_date = parse_iso!(params.expect(:end))
+    ingredient_ids = validate_params!(GenerateContract)[:ingredients].keys
 
-    schedule_day_ids = @current_user.family.schedule_days.in_range(start_date, end_date).pluck(:id)
-    items = ScheduleItem.where(schedule_day_id: schedule_day_ids)
+    schedule_day_ids = family.schedule_days.in_range(start_date, end_date).pluck(:id)
+    grouped = ScheduleItem.where(schedule_day_id: schedule_day_ids)
       .kind_recipe
-      .map(&:recipe)
-      .flat_map(&:ingredients)
-      .group_by { |ingredient| [ingredient.name, ingredient.unit] }
+      .includes(recipe: :ingredients)
+      .flat_map { |si| si.recipe&.ingredients || [] }
+      .select { |ingredient| ingredient_ids.include?(ingredient.id.to_s) }
+      .group_by { |i| [i.name.downcase.strip, UnitConverter.category(i.unit.to_sym)] }
 
-    items.each do |k, ingredients|
-      ingredient = ingredients.first
-      total_quantity = ingredients.sum(&:quantity)
-      family.grocery_items.create!(
-        name: ingredient.name,
-        quantity: total_quantity,
-        aisle: ingredient.aisle,
-        unit: ingredient.unit
-      )
+    ApplicationRecord.transaction do
+      grouped.each do |(_name, _category), ingredients|
+        ingredient = ingredients.first
+        pairs = ingredients.map { |i| UnitConverter.to_base(i.quantity.to_f, i.unit.to_sym, system) }
+        total_base = pairs.sum(&:first)
+        _, base_unit = pairs.first
+
+        family.grocery_items.create!(
+          name: ingredient.name,
+          quantity: total_base,
+          aisle: ingredient.aisle,
+          unit: base_unit
+        )
+      end
     end
 
     invalidate_groceries!
@@ -44,7 +65,7 @@ class GroceryItemsController < ApplicationController
     item = @current_user.family.grocery_items.new(grocery_item_params)
     if item.save
       invalidate_groceries!
-      return render json: GroceryItemSerializer.render(item), status: :created
+      return render json: GroceryItemSerializer.render(item, unit_preference: @current_user.family.unit_preference), status: :created
     end
     render json: {error: item.errors.full_messages.first}, status: :unprocessable_content
   rescue ArgumentError => e
@@ -55,7 +76,7 @@ class GroceryItemsController < ApplicationController
     item = grocery_item
     if item.update(grocery_item_params)
       invalidate_groceries!
-      return render json: GroceryItemSerializer.render(item), status: :ok
+      return render json: GroceryItemSerializer.render(item, unit_preference: @current_user.family.unit_preference), status: :ok
     end
     render json: {error: item.errors.full_messages.first}, status: :unprocessable_content
   rescue ArgumentError => e
