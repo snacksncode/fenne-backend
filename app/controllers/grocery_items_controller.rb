@@ -88,6 +88,23 @@ class GroceryItemsController < ApplicationController
     invalidate_groceries!
   end
 
+def preview
+  start_date = parse_iso!(params.expect(:start))
+  end_date = parse_iso!(params.expect(:end))
+
+  schedule_day_ids = @current_user.family.schedule_days.in_range(start_date, end_date).pluck(:id)
+  items = ScheduleItem.where(schedule_day_id: schedule_day_ids)
+    .kind_recipe
+    .includes(recipe: :ingredients)
+    .reject { |si| si.recipe.nil? }
+
+  grouped = items.group_by(&:recipe)
+
+  render json: PreviewRecipeSerializer.render_many(grouped, unit_preference: @current_user.family.unit_preference)
+rescue ArgumentError => e
+  render json: { error: e.message }, status: :bad_request
+end
+
   private
 
   def parse_iso!(date_string)

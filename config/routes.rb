@@ -25,6 +25,7 @@ Rails.application.routes.draw do
   patch "/family/preferences", to: "family#preferences"
 
   # grocery items
+  get "/grocery_items/preview", to: "grocery_items#preview"
   resources :grocery_items
   post "/grocery_items/checkout", to: "grocery_items#checkout"
   post "/grocery_items/generate", to: "grocery_items#generate"

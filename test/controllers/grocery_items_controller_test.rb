@@ -570,4 +570,162 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 2.0, item2_json["quantity"]
     assert_equal "tbsp", item2_json["unit"]
   end
+
+  # GET /grocery_items/preview
+  test "preview requires authentication" do
+    get "/grocery_items/preview", params: { start: Date.today.to_s, end: Date.today.to_s }
+    assert_response :unauthorized
+  end
+
+  test "preview requires start and end params" do
+    user = users(:john_smith)
+    get "/grocery_items/preview", headers: auth_headers_for(user)
+    assert_response :bad_request
+  end
+
+  test "preview rejects invalid date format" do
+    user = users(:john_smith)
+    get "/grocery_items/preview", params: { start: "not-a-date", end: Date.today.to_s }, headers: auth_headers_for(user)
+    assert_response :bad_request
+    json = response.parsed_body
+    assert json["error"].present?
+  end
+
+  test "preview returns empty array when no recipes scheduled" do
+    user = users(:john_smith)
+    get "/grocery_items/preview", params: { start: "2099-01-01", end: "2099-01-07" }, headers: auth_headers_for(user)
+    assert_response :success
+    json = response.parsed_body
+    assert_equal [], json
+  end
+
+  test "preview returns recipes with correct structure" do
+    user = users(:john_smith)
+    recipe = recipes(:pasta_carbonara_smith)
+    schedule_day = ScheduleDay.create!(family: user.family, date: Date.today + 30.days)
+    ScheduleItem.create!(schedule_day: schedule_day, recipe: recipe, kind: :recipe, meal_type: :breakfast)
+
+    get "/grocery_items/preview", params: { start: (Date.today + 30.days).to_s, end: (Date.today + 30.days).to_s }, headers: auth_headers_for(user)
+
+    assert_response :success
+    json = response.parsed_body
+    assert json.is_a?(Array)
+    assert json.length > 0
+    entry = json.first
+    assert entry.key?("id")
+    assert entry.key?("name")
+    assert entry.key?("meal_type")
+    assert entry.key?("amount")
+    assert entry.key?("ingredients")
+    assert entry["ingredients"].is_a?(Array)
+    ingredient = entry["ingredients"].first
+    assert ingredient.key?("id")
+    assert ingredient.key?("name")
+    assert ingredient.key?("quantity")
+    assert ingredient.key?("unit")
+    assert_equal "String", entry["id"].class.name
+  end
+
+  test "preview returns correct amount for repeated recipe" do
+    user = users(:john_smith)
+    recipe = recipes(:pasta_carbonara_smith)
+    (Date.today + 40.days .. Date.today + 42.days).each_with_index do |date, i|
+      sd = ScheduleDay.create!(family: user.family, date: date)
+      ScheduleItem.create!(schedule_day: sd, recipe: recipe, kind: :recipe, meal_type: :breakfast)
+    end
+
+    get "/grocery_items/preview", params: { start: (Date.today + 40.days).to_s, end: (Date.today + 42.days).to_s }, headers: auth_headers_for(user)
+
+    assert_response :success
+    json = response.parsed_body
+    entry = json.find { |r| r["id"] == recipe.id.to_s }
+    assert_not_nil entry
+    assert_equal 3, entry["amount"]
+  end
+
+  test "preview returns display-converted ingredient quantities for metric family" do
+    user = users(:john_smith)
+    user.family.update!(unit_preference: :metric)
+    recipe = recipes(:pasta_carbonara_smith)
+    schedule_day = ScheduleDay.create!(family: user.family, date: Date.today + 50.days)
+    ScheduleItem.create!(schedule_day: schedule_day, recipe: recipe, kind: :recipe, meal_type: :lunch)
+
+    get "/grocery_items/preview", params: { start: (Date.today + 50.days).to_s, end: (Date.today + 50.days).to_s }, headers: auth_headers_for(user)
+
+    assert_response :success
+    json = response.parsed_body
+    entry = json.find { |r| r["id"] == recipe.id.to_s }
+    spaghetti = entry["ingredients"].find { |i| i["name"] == "Spaghetti" }
+    assert_not_nil spaghetti
+    assert_equal "g", spaghetti["unit"]
+    assert spaghetti["quantity"].is_a?(Numeric)
+  end
+
+  test "preview ingredient quantities are per single recipe not multiplied by amount" do
+    user = users(:john_smith)
+    recipe = recipes(:pasta_carbonara_smith)
+    [Date.today + 60.days, Date.today + 61.days].each do |date|
+      sd = ScheduleDay.create!(family: user.family, date: date)
+      ScheduleItem.create!(schedule_day: sd, recipe: recipe, kind: :recipe, meal_type: :breakfast)
+    end
+
+    get "/grocery_items/preview", params: { start: (Date.today + 60.days).to_s, end: (Date.today + 61.days).to_s }, headers: auth_headers_for(user)
+
+    assert_response :success
+    json = response.parsed_body
+    entry = json.find { |r| r["id"] == recipe.id.to_s }
+    assert_equal 2, entry["amount"]
+
+    spaghetti_preview = entry["ingredients"].find { |i| i["name"] == "Spaghetti" }
+    sd_single = ScheduleDay.create!(family: user.family, date: Date.today + 90.days)
+    ScheduleItem.create!(schedule_day: sd_single, recipe: recipe, kind: :recipe, meal_type: :breakfast)
+    get "/grocery_items/preview", params: { start: (Date.today + 90.days).to_s, end: (Date.today + 90.days).to_s }, headers: auth_headers_for(user)
+    json_single = response.parsed_body
+    spaghetti_single = json_single.find { |r| r["id"] == recipe.id.to_s }["ingredients"].find { |i| i["name"] == "Spaghetti" }
+
+    assert_equal spaghetti_single["quantity"], spaghetti_preview["quantity"]
+  end
+
+  test "preview excludes dining out schedule items" do
+    user = users(:john_smith)
+    schedule_day = ScheduleDay.create!(family: user.family, date: Date.today + 70.days)
+    ScheduleItem.create!(schedule_day: schedule_day, kind: :dining_out, dining_out_name: "Pizza Place", meal_type: :dinner)
+
+    get "/grocery_items/preview", params: { start: (Date.today + 70.days).to_s, end: (Date.today + 70.days).to_s }, headers: auth_headers_for(user)
+
+    assert_response :success
+    json = response.parsed_body
+    assert_equal [], json
+  end
+
+  test "preview isolates to current family" do
+    user = users(:john_smith)
+    other_recipe = recipes(:grilled_salmon_johnson)
+    other_family = families(:johnson_family)
+    sd = ScheduleDay.create!(family: other_family, date: Date.today + 80.days)
+    ScheduleItem.create!(schedule_day: sd, recipe: other_recipe, kind: :recipe, meal_type: :dinner)
+
+    get "/grocery_items/preview", params: { start: (Date.today + 80.days).to_s, end: (Date.today + 80.days).to_s }, headers: auth_headers_for(user)
+
+    assert_response :success
+    json = response.parsed_body
+    assert_equal [], json
+  end
+
+  test "preview returns imperial display units for imperial family" do
+    user = users(:john_smith)
+    user.family.update!(unit_preference: :imperial)
+    recipe = recipes(:pasta_carbonara_smith)
+    schedule_day = ScheduleDay.create!(family: user.family, date: Date.today + 85.days)
+    ScheduleItem.create!(schedule_day: schedule_day, recipe: recipe, kind: :recipe, meal_type: :dinner)
+
+    get "/grocery_items/preview", params: { start: (Date.today + 85.days).to_s, end: (Date.today + 85.days).to_s }, headers: auth_headers_for(user)
+
+    assert_response :success
+    json = response.parsed_body
+    entry = json.find { |r| r["id"] == recipe.id.to_s }
+    spaghetti = entry["ingredients"].find { |i| i["name"] == "Spaghetti" }
+    assert_not_nil spaghetti
+    assert_equal "oz", spaghetti["unit"]
+  end
 end
