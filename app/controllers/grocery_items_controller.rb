@@ -13,11 +13,11 @@ class GroceryItemsController < ApplicationController
   end
 
   def index
-    render json: GroceryItemSerializer.render_many(grocery_items, unit_preference: @current_user.family.unit_preference)
+    render json: GroceryItemSerializer.render_many(grocery_items)
   end
 
   def show
-    render json: GroceryItemSerializer.render(grocery_item, unit_preference: @current_user.family.unit_preference)
+    render json: GroceryItemSerializer.render(grocery_item)
   end
 
   def destroy
@@ -47,12 +47,13 @@ class GroceryItemsController < ApplicationController
         pairs = ingredients.map { |i| UnitConverter.to_base(i.quantity.to_f, i.unit.to_sym, system) }
         total_base = pairs.sum(&:first)
         _, base_unit = pairs.first
+        baked_qty, baked_unit = UnitConverter.friendly(total_base, base_unit, system)
 
         family.grocery_items.create!(
           name: ingredient.name,
-          quantity: total_base,
+          quantity: baked_qty,
           aisle: ingredient.aisle,
-          unit: base_unit
+          unit: baked_unit
         )
       end
     end
@@ -65,7 +66,7 @@ class GroceryItemsController < ApplicationController
     item = @current_user.family.grocery_items.new(grocery_item_params)
     if item.save
       invalidate_groceries!
-      return render json: GroceryItemSerializer.render(item, unit_preference: @current_user.family.unit_preference), status: :created
+      return render json: GroceryItemSerializer.render(item), status: :created
     end
     render json: {error: item.errors.full_messages.first}, status: :unprocessable_content
   rescue ArgumentError => e
@@ -76,7 +77,7 @@ class GroceryItemsController < ApplicationController
     item = grocery_item
     if item.update(grocery_item_params)
       invalidate_groceries!
-      return render json: GroceryItemSerializer.render(item, unit_preference: @current_user.family.unit_preference), status: :ok
+      return render json: GroceryItemSerializer.render(item), status: :ok
     end
     render json: {error: item.errors.full_messages.first}, status: :unprocessable_content
   rescue ArgumentError => e
@@ -88,22 +89,22 @@ class GroceryItemsController < ApplicationController
     invalidate_groceries!
   end
 
-def preview
-  start_date = parse_iso!(params.expect(:start))
-  end_date = parse_iso!(params.expect(:end))
+  def preview
+    start_date = parse_iso!(params.expect(:start))
+    end_date = parse_iso!(params.expect(:end))
 
-  schedule_day_ids = @current_user.family.schedule_days.in_range(start_date, end_date).pluck(:id)
-  items = ScheduleItem.where(schedule_day_id: schedule_day_ids)
-    .kind_recipe
-    .includes(recipe: :ingredients)
-    .reject { |si| si.recipe.nil? }
+    schedule_day_ids = @current_user.family.schedule_days.in_range(start_date, end_date).pluck(:id)
+    items = ScheduleItem.where(schedule_day_id: schedule_day_ids)
+      .kind_recipe
+      .includes(recipe: :ingredients)
+      .reject { |si| si.recipe.nil? }
 
-  grouped = items.group_by(&:recipe)
+    grouped = items.group_by(&:recipe)
 
-  render json: PreviewRecipeSerializer.render_many(grouped, unit_preference: @current_user.family.unit_preference)
-rescue ArgumentError => e
-  render json: { error: e.message }, status: :bad_request
-end
+    render json: PreviewRecipeSerializer.render_many(grouped, unit_preference: @current_user.family.unit_preference)
+  rescue ArgumentError => e
+    render json: {error: e.message}, status: :bad_request
+  end
 
   private
 

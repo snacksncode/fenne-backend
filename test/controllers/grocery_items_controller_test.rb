@@ -426,6 +426,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     grocery_item = GroceryItem.find_by(name: "Flour")
     assert_equal 800, grocery_item.quantity
+    assert_equal "g", grocery_item.unit.to_s
   end
 
   test "generate converts to imperial for imperial user" do
@@ -456,18 +457,18 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     grocery_item = GroceryItem.find_by(name: "Flour")
     assert_equal "oz", grocery_item.unit.to_s
+    assert_equal 4.0, grocery_item.quantity.to_f
   end
 
-  # Display conversion tests
-  test "show applies metric display conversion for metric user" do
+  # Passthrough tests — items stored with baked values (as generate would produce)
+  test "show returns baked quantity and unit from db" do
     user = users(:john_smith)
-    user.family.update!(unit_preference: :metric) # metric
     item = GroceryItem.create!(
       family: user.family,
       name: "Test Item",
-      quantity: 1500,
+      quantity: 1.5,
       aisle: :produce,
-      unit: :g,
+      unit: :kg,
       status: :pending
     )
 
@@ -477,18 +478,17 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     json = response.parsed_body
     assert_equal 1.5, json["quantity"]
     assert_equal "kg", json["unit"]
-    assert_equal "kg", json["formatted_unit"]
   end
 
-  test "show applies imperial display conversion for imperial user" do
+  test "show returns baked quantity and unit regardless of unit_preference" do
     user = users(:john_smith)
-    user.family.update!(unit_preference: :imperial) # imperial
+    user.family.update!(unit_preference: :imperial)
     item = GroceryItem.create!(
       family: user.family,
       name: "Test Item",
-      quantity: 32,
+      quantity: 1.0,
       aisle: :produce,
-      unit: :fl_oz,
+      unit: :qt,
       status: :pending
     )
 
@@ -498,18 +498,16 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     json = response.parsed_body
     assert_equal 1.0, json["quantity"]
     assert_equal "qt", json["unit"]
-    assert_equal "qt", json["formatted_unit"]
   end
 
-  test "show applies spoon conversion for both systems" do
+  test "show returns baked spoon unit from db" do
     user = users(:john_smith)
-    user.family.update!(unit_preference: :metric) # metric
     item = GroceryItem.create!(
       family: user.family,
       name: "Test Item",
-      quantity: 6,
+      quantity: 2.0,
       aisle: :produce,
-      unit: :tsp,
+      unit: :tbsp,
       status: :pending
     )
 
@@ -519,12 +517,10 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     json = response.parsed_body
     assert_equal 2.0, json["quantity"]
     assert_equal "tbsp", json["unit"]
-    assert_equal "tbsp", json["formatted_unit"]
   end
 
-  test "show preserves count unit" do
+  test "show returns raw count unit from db" do
     user = users(:john_smith)
-    user.family.update!(unit_preference: :metric) # metric
     item = GroceryItem.create!(
       family: user.family,
       name: "Test Item",
@@ -538,28 +534,26 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     json = response.parsed_body
-    assert_equal 1, json["quantity"]
+    assert_equal 1.0, json["quantity"]
     assert_equal "count", json["unit"]
-    assert_equal "pc", json["formatted_unit"]
   end
 
-  test "index applies display conversion for all items" do
+  test "index returns baked unit values from db" do
     user = users(:john_smith)
-    user.family.update!(unit_preference: :metric) # metric
     item1 = GroceryItem.create!(
       family: user.family,
       name: "Item 1",
-      quantity: 1500,
+      quantity: 1.5,
       aisle: :produce,
-      unit: :g,
+      unit: :kg,
       status: :pending
     )
     item2 = GroceryItem.create!(
       family: user.family,
       name: "Item 2",
-      quantity: 6,
+      quantity: 2.0,
       aisle: :produce,
-      unit: :tsp,
+      unit: :tbsp,
       status: :pending
     )
 
@@ -571,10 +565,8 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     item2_json = json.find { |j| j["id"] == item2.id.to_s }
     assert_equal 1.5, item1_json["quantity"]
     assert_equal "kg", item1_json["unit"]
-    assert_equal "kg", item1_json["formatted_unit"]
     assert_equal 2.0, item2_json["quantity"]
     assert_equal "tbsp", item2_json["unit"]
-    assert_equal "tbsp", item2_json["formatted_unit"]
   end
 
   # GET /grocery_items/preview
@@ -621,8 +613,8 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
         "meal_type" => "breakfast",
         "amount" => 1,
         "ingredients" => [
-          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "count", "formatted_unit" => "pcs"},
-          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g", "formatted_unit" => "g"}
+          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "count"},
+          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g"}
         ]
       }
     ], response.parsed_body
@@ -646,8 +638,8 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
         "meal_type" => "breakfast",
         "amount" => 3,
         "ingredients" => [
-          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "count", "formatted_unit" => "pcs"},
-          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g", "formatted_unit" => "g"}
+          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "count"},
+          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g"}
         ]
       }
     ], response.parsed_body
@@ -670,8 +662,8 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
         "meal_type" => "lunch",
         "amount" => 1,
         "ingredients" => [
-          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "count", "formatted_unit" => "pcs"},
-          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g", "formatted_unit" => "g"}
+          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "count"},
+          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g"}
         ]
       }
     ], response.parsed_body
@@ -696,8 +688,8 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
         "meal_type" => "breakfast",
         "amount" => 2,
         "ingredients" => [
-          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "count", "formatted_unit" => "pcs"},
-          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g", "formatted_unit" => "g"}
+          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "count"},
+          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g"}
         ]
       }
     ], response.parsed_body
@@ -747,8 +739,8 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
         "meal_type" => "dinner",
         "amount" => 1,
         "ingredients" => [
-          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "count", "formatted_unit" => "pcs"},
-          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 15.0, "unit" => "oz", "formatted_unit" => "oz"}
+          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "count"},
+          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 15.0, "unit" => "oz"}
         ]
       }
     ], response.parsed_body
