@@ -1,6 +1,6 @@
 class FoodItemsController < ApplicationController
   class CreateFoodItemParams < Dry::Validation::Contract
-    AISLE_TYPES = %w[produce bakery dairy_eggs meat seafood pantry frozen_foods beverages snacks condiments_sauces spices_baking household personal_care pet_supplies other]
+    AISLE_TYPES = FoodItem.aisles.keys.map(&:to_s)
 
     params do
       required(:name).filled(:string)

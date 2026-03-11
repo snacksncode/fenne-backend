@@ -1,8 +1,8 @@
 class RecipesController < ApplicationController
   class RecipeContract < Dry::Validation::Contract
     MEAL_TYPES = %w[breakfast lunch dinner]
-    UNIT_TYPES = %w[g kg ml l fl_oz cup tbsp tsp pt qt oz lb count]
-    AISLE_TYPES = %w[produce bakery dairy_eggs meat seafood pantry frozen_foods beverages snacks condiments_sauces spices_baking household personal_care pet_supplies other]
+    UNIT_TYPES = Ingredient.units.keys.map(&:to_s)
+    AISLE_TYPES = Ingredient.aisles.keys.map(&:to_s)
 
     IngredientSchema = Dry::Schema.Params do
       required(:name).filled(:string)
