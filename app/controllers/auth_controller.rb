@@ -36,8 +36,8 @@ class AuthController < ApplicationController
 
   def convert_guest
     email, password, name = signup_params
-
-    if @current_user.update(email:, password:, name:)
+    attrs = {email:, password:, name:}
+    if @current_user.update(attrs)
       return render json: {status: :success}
     end
 

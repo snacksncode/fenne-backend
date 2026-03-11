@@ -10,10 +10,11 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_16_174605) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_10_210459) do
   create_table "families", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "unit_preference", default: 0, null: false
   end
 
   create_table "family_invitations", force: :cascade do |t|

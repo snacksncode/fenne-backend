@@ -125,6 +125,74 @@ class AuthControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
+  # POST /change_details
+  test "change_details updates name" do
+    user = users(:john_smith)
+    new_name = "Updated Name"
+
+    post "/change_details",
+      params: {data: {name: new_name}},
+      headers: auth_headers_for(user),
+      as: :json
+
+    assert_response :success
+    user.reload
+    assert_equal new_name, user.name
+  end
+
+  test "change_details updates email" do
+    user = users(:john_smith)
+    new_email = "newemail@example.com"
+
+    post "/change_details",
+      params: {data: {email: new_email}},
+      headers: auth_headers_for(user),
+      as: :json
+
+    assert_response :success
+    user.reload
+    assert_equal new_email, user.email
+  end
+
+
+
+
+
+  test "change_details updates multiple fields at once" do
+    user = users(:john_smith)
+    new_name = "Updated Name"
+    new_email = "newemail@example.com"
+
+    post "/change_details",
+      params: {data: {name: new_name, email: new_email}},
+      headers: auth_headers_for(user),
+      as: :json
+
+    assert_response :success
+    user.reload
+    assert_equal new_name, user.name
+    assert_equal new_email, user.email
+  end
+
+  test "me endpoint includes unit_preference in response" do
+    user = users(:john_smith)
+    user.family.update!(unit_preference: 1)
+
+    get "/me", headers: auth_headers_for(user)
+
+    assert_response :success
+    json = response.parsed_body
+    assert_not_nil json["family"]
+    assert_equal 1, json["family"]["unit_preference"]
+  end
+
+  test "change_details requires authentication" do
+    post "/change_details",
+      params: {data: {name: "Test"}},
+      as: :json
+
+    assert_response :unauthorized
+  end
   # POST /change_password
   test "change_password updates password" do
     user = users(:john_smith)
@@ -160,4 +228,7 @@ class AuthControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unauthorized
   end
+
+  # POST /convert_guest
+
 end

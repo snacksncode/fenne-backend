@@ -29,3 +29,8 @@ diana_token_one:
   user: diana_lee
   token: <%= SecureRandom.hex(32) %>
   expires_at: <%= 90.days.from_now %>
+
+guest_token_one:
+  user: guest_user
+  token: <%= SecureRandom.hex(32) %>
+  expires_at: <%= 90.days.from_now %>

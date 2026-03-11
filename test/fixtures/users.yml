@@ -39,3 +39,10 @@ diana_lee:
   password_digest: <%= BCrypt::Password.create('test1234') %>
   name: Diana Lee
   family: lee_family
+
+# Guest User
+guest_user:
+  email: <%= SecureRandom.uuid %>+guest@fenneplanner.com
+  password_digest: <%= BCrypt::Password.create('guestpass123') %>
+  name: Guest
+  family: smith_family
