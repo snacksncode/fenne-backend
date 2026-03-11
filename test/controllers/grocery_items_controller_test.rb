@@ -477,6 +477,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     json = response.parsed_body
     assert_equal 1.5, json["quantity"]
     assert_equal "kg", json["unit"]
+    assert_equal "kg", json["formatted_unit"]
   end
 
   test "show applies imperial display conversion for imperial user" do
@@ -497,6 +498,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     json = response.parsed_body
     assert_equal 1.0, json["quantity"]
     assert_equal "qt", json["unit"]
+    assert_equal "qt", json["formatted_unit"]
   end
 
   test "show applies spoon conversion for both systems" do
@@ -517,6 +519,7 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     json = response.parsed_body
     assert_equal 2.0, json["quantity"]
     assert_equal "tbsp", json["unit"]
+    assert_equal "tbsp", json["formatted_unit"]
   end
 
   test "show preserves count unit" do
@@ -536,7 +539,8 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     json = response.parsed_body
     assert_equal 1, json["quantity"]
-    assert_equal "pc", json["unit"]
+    assert_equal "count", json["unit"]
+    assert_equal "pc", json["formatted_unit"]
   end
 
   test "index applies display conversion for all items" do
@@ -567,8 +571,10 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     item2_json = json.find { |j| j["id"] == item2.id.to_s }
     assert_equal 1.5, item1_json["quantity"]
     assert_equal "kg", item1_json["unit"]
+    assert_equal "kg", item1_json["formatted_unit"]
     assert_equal 2.0, item2_json["quantity"]
     assert_equal "tbsp", item2_json["unit"]
+    assert_equal "tbsp", item2_json["formatted_unit"]
   end
 
   # GET /grocery_items/preview
@@ -615,8 +621,8 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
         "meal_type" => "breakfast",
         "amount" => 1,
         "ingredients" => [
-          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "pcs"},
-          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g"}
+          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "count", "formatted_unit" => "pcs"},
+          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g", "formatted_unit" => "g"}
         ]
       }
     ], response.parsed_body
@@ -640,8 +646,8 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
         "meal_type" => "breakfast",
         "amount" => 3,
         "ingredients" => [
-          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "pcs"},
-          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g"}
+          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "count", "formatted_unit" => "pcs"},
+          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g", "formatted_unit" => "g"}
         ]
       }
     ], response.parsed_body
@@ -664,8 +670,8 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
         "meal_type" => "lunch",
         "amount" => 1,
         "ingredients" => [
-          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "pcs"},
-          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g"}
+          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "count", "formatted_unit" => "pcs"},
+          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g", "formatted_unit" => "g"}
         ]
       }
     ], response.parsed_body
@@ -690,8 +696,8 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
         "meal_type" => "breakfast",
         "amount" => 2,
         "ingredients" => [
-          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "pcs"},
-          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g"}
+          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "count", "formatted_unit" => "pcs"},
+          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 400, "unit" => "g", "formatted_unit" => "g"}
         ]
       }
     ], response.parsed_body
@@ -741,8 +747,8 @@ class GroceryItemsControllerTest < ActionDispatch::IntegrationTest
         "meal_type" => "dinner",
         "amount" => 1,
         "ingredients" => [
-          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "pcs"},
-          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 15.0, "unit" => "oz"}
+          {"id" => ingredients(:pasta_carbonara_eggs).id.to_s, "name" => "Eggs", "quantity" => 3, "unit" => "count", "formatted_unit" => "pcs"},
+          {"id" => ingredients(:pasta_carbonara_pasta).id.to_s, "name" => "Spaghetti", "quantity" => 15.0, "unit" => "oz", "formatted_unit" => "oz"}
         ]
       }
     ], response.parsed_body
