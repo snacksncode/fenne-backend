@@ -35,3 +35,6 @@
 
 # MacOS
 .DS_Store
+
+# Sisyphus AI scaffolding artifacts
+/.sisyphus/

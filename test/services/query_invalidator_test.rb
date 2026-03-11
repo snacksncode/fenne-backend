@@ -1,6 +1,7 @@
 require "test_helper"
 
 class QueryInvalidatorTest < ActiveSupport::TestCase
+  include ActionCable::TestHelper
   test "broadcast sends message to family stream" do
     family = families(:smith_family)
 

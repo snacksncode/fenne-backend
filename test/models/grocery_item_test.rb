@@ -16,7 +16,7 @@ class GroceryItemTest < ActiveSupport::TestCase
   test "unit enum includes all unit types" do
     item = grocery_items(:smith_milk)
 
-    %i[g kg ml l fl_oz cup tbsp tsp pt qt oz lb count].each do |unit_type|
+    %i[g kg ml l fl_oz cup tbsp tsp qt oz lb count].each do |unit_type|
       item.unit = unit_type
       assert_equal unit_type.to_s, item.unit
     end

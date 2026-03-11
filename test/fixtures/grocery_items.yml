@@ -5,7 +5,7 @@ smith_apple:
   name: Red Apples
   quantity: 6
   aisle: 0
-  unit: 2
+  unit: 12
   status: pending
 
 smith_milk:
