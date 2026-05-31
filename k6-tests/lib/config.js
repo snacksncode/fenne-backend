@@ -2,7 +2,7 @@
 
 export const CONFIG = {
   // Base API URL - can be overridden with API_URL environment variable
-  baseUrl: __ENV.API_URL || 'http://127.0.0.1:3000',
+  baseUrl: __ENV.API_URL || 'http://127.0.0.1:3000/v2',
 
   // Thresholds for smoke tests (light load, quick validation)
   smokeThresholds: {

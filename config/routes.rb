@@ -9,46 +9,45 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # Defines the root path route ("/")
-  # root "posts#index"
+  namespace :v2 do
+    mount ActionCable.server => "/cable"
 
-  # auth
-  post "/signup", to: "auth#signup"
-  post "/login", to: "auth#login"
-  post "/logout", to: "auth#logout"
-  post "/change_password", to: "auth#change_password"
-  post "/guest", to: "auth#guest"
-  post "/change_details", to: "auth#change_details"
-  post "/convert_guest", to: "auth#convert_guest"
-  get "/me", to: "auth#me"
-  delete "/delete_account", to: "auth#destroy"
-  patch "/family/preferences", to: "family#preferences"
+    post "/signup", to: "auth#signup"
+    post "/login", to: "auth#login"
+    post "/logout", to: "auth#logout"
+    post "/change_password", to: "auth#change_password"
+    post "/change_details", to: "auth#change_details"
+    post "/convert_guest", to: "auth#convert_guest"
+    post "/guest", to: "auth#guest"
+    get "/me", to: "auth#me"
+    delete "/delete_account", to: "auth#destroy"
+    patch "/family/preferences", to: "family#preferences"
 
-  # grocery items
-  get "/grocery_items/preview", to: "grocery_items#preview"
-  resources :grocery_items
-  post "/grocery_items/checkout", to: "grocery_items#checkout"
-  post "/grocery_items/generate", to: "grocery_items#generate"
+    resources :products do
+      collection do
+        get :name_collision
+      end
+    end
+    resources :suggestions, only: [:index]
+    resources :pantry_entries, only: [:index, :create, :update, :destroy]
+    resources :consumption_logs, only: [:index, :create, :destroy]
 
-  # recipes
-  resources :recipes
+    get "/grocery_items/preview", to: "grocery_items#preview"
+    post "/grocery_items/checkout", to: "grocery_items#checkout"
+    post "/grocery_items/generate", to: "grocery_items#generate"
+    resources :grocery_items
 
-  # food items
-  resources :food_items
+    resources :recipes
 
-  # schedule
-  get "/schedule", to: "schedule#index"
-  post "/schedule", to: "schedule#create"
-  put "/schedule/:date", to: "schedule#upsert"
+    get "/schedule", to: "schedule#index"
+    post "/schedule", to: "schedule#create"
+    put "/schedule/:date", to: "schedule#upsert"
 
-  # invitations
-  get "/invitations", to: "family_invitations#show"
-  post "/invitations", to: "family_invitations#invite"
-  post "/invitations/:invitation_id/accept", to: "family_invitations#accept"
-  post "/invitations/:invitation_id/decline", to: "family_invitations#decline"
-  delete "/invitations/:invitation_id", to: "family_invitations#destroy"
-  post "/leave_family", to: "family_invitations#leave"
-
-  # websockets
-  mount ActionCable.server => "/cable"
+    get "/invitations", to: "family_invitations#show"
+    post "/invitations", to: "family_invitations#invite"
+    post "/invitations/:invitation_id/accept", to: "family_invitations#accept"
+    post "/invitations/:invitation_id/decline", to: "family_invitations#decline"
+    delete "/invitations/:invitation_id", to: "family_invitations#destroy"
+    post "/leave_family", to: "family_invitations#leave"
+  end
 end

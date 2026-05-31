@@ -4,17 +4,17 @@
 
 require "json"
 
-# Seed food items from JSON file
-food_items_path = Rails.root.join("db", "seeds", "food_items.json")
+# Seed the global autocomplete dictionary from JSON.
+product_suggestions_path = Rails.root.join("db", "seeds", "product_suggestions.json")
 
-if File.exist?(food_items_path)
-  food_items_data = JSON.parse(File.read(food_items_path))
+if File.exist?(product_suggestions_path)
+  product_suggestions_data = JSON.parse(File.read(product_suggestions_path))
 
-  food_items_data.each do |item|
-    FoodItem.find_or_create_by!(name: item["name"], aisle: item["category"])
+  product_suggestions_data.each do |item|
+    ProductSuggestion.find_or_create_by!(name: item["name"], aisle: item["category"])
   end
 
-  puts "Seeded #{FoodItem.count} food items"
+  puts "Seeded #{ProductSuggestion.count} product suggestions"
 else
-  puts "Warning: food_items.json not found at #{food_items_path}"
+  puts "Warning: product_suggestions.json not found at #{product_suggestions_path}"
 end

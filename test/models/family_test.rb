@@ -29,12 +29,6 @@ class FamilyTest < ActiveSupport::TestCase
     assert_respond_to family, :schedule_days
   end
 
-  test "has many food items" do
-    family = families(:smith_family)
-
-    assert_respond_to family, :food_items
-  end
-
   test "destroys grocery items when family is destroyed" do
     family = Family.create!
     grocery_item = GroceryItem.create!(family: family, name: "Test", quantity: 1, aisle: :produce, unit: :count)
@@ -62,12 +56,4 @@ class FamilyTest < ActiveSupport::TestCase
     assert_not ScheduleDay.exists?(schedule_day.id)
   end
 
-  test "destroys food items when family is destroyed" do
-    family = Family.create!
-    food_item = FoodItem.create!(family: family, name: "Test Item", aisle: :produce)
-
-    family.destroy
-
-    assert_not FoodItem.exists?(food_item.id)
-  end
 end

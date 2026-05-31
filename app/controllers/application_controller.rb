@@ -29,21 +29,15 @@ class ApplicationController < ActionController::API
   end
 
   def unauthorized!
-    return render_error({base: ["Unauthorized"]}, status: :unauthorized) if v2_request?
-
-    render json: {error: "Unauthorized"}, status: :unauthorized
+    render_error({base: ["Unauthorized"]}, status: :unauthorized)
   end
 
   def bad_request!(message = "Bad request")
-    return render_error({base: [message]}, status: :bad_request) if v2_request?
-
-    render json: {error: message}, status: :bad_request
+    render_error({base: [message]}, status: :bad_request)
   end
 
   def unprocessable_entity!(errors)
-    return render_error(errors) if v2_request?
-
-    render json: {errors: errors}, status: :unprocessable_entity
+    render_error(errors)
   end
 
   def validate_email!(email)
@@ -52,15 +46,11 @@ class ApplicationController < ActionController::API
   end
 
   def not_found!
-    return render_error({base: ["Not found"]}, status: :not_found) if v2_request?
-
-    render json: {error: "Not found"}, status: :not_found
+    render_error({base: ["Not found"]}, status: :not_found)
   end
 
   def conflict!
-    return render_error({base: ["conflict"]}, status: :conflict) if v2_request?
-
-    render json: {error: "Conflict"}, status: :conflict
+    render_error({base: ["conflict"]}, status: :conflict)
   end
 
   def invalid_email!
@@ -88,7 +78,4 @@ class ApplicationController < ActionController::API
     token
   end
 
-  def v2_request?
-    request.path.start_with?("/v2")
-  end
 end

@@ -5,20 +5,20 @@ class ApplicationCable::ConnectionTest < ActionCable::Connection::TestCase
     user = users(:john_smith)
     token = user.session_tokens.first
 
-    connect "/cable?token=#{token.token}"
+    connect "/v2/cable?token=#{token.token}"
 
     assert_equal user.id, connection.user.id
   end
 
   test "rejects connection with invalid token" do
     assert_reject_connection do
-      connect "/cable?token=invalid_token"
+      connect "/v2/cable?token=invalid_token"
     end
   end
 
   test "rejects connection without token" do
     assert_reject_connection do
-      connect "/cable"
+      connect "/v2/cable"
     end
   end
 
@@ -26,7 +26,7 @@ class ApplicationCable::ConnectionTest < ActionCable::Connection::TestCase
     user = users(:jane_smith)
     token = user.session_tokens.first
 
-    connect "/cable?token=#{token.token}"
+    connect "/v2/cable?token=#{token.token}"
 
     assert_equal user, connection.user
   end
