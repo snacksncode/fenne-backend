@@ -3,7 +3,9 @@ class Recipe < ApplicationRecord
   has_many :ingredients, dependent: :destroy
   has_many :schedule_items, dependent: :destroy
 
-  MEAL_TYPES = {breakfast: 1, lunch: 2, dinner: 4}
+  MEAL_TYPES = { breakfast: 1, lunch: 2, dinner: 4 }
+
+  scope :detail, -> { includes(ingredients: :product) }
 
   def meal_types
     MEAL_TYPES.select { |_, value| (meal_types_bitmask & value) > 0 }.keys
@@ -15,7 +17,7 @@ class Recipe < ApplicationRecord
   end
 
   validates :name, :meal_types, :time_in_minutes, presence: true
-  validates :liked, inclusion: {in: [true, false]}
+  validates :liked, inclusion: { in: [ true, false ] }
   validates :meal_types_bitmask, numericality: {
     greater_than_or_equal_to: 0,
     less_than_or_equal_to: 7

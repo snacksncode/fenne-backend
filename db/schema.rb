@@ -10,11 +10,24 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_10_210459) do
+ActiveRecord::Schema[8.0].define(version: 2026_06_21_130000) do
+  create_table "consumption_logs", force: :cascade do |t|
+    t.integer "family_id", null: false
+    t.integer "meal_type", null: false
+    t.date "schedule_date", null: false
+    t.json "deductions", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "recipe_name", null: false
+    t.index ["family_id", "schedule_date", "meal_type"], name: "idx_consumption_one_per_slot", unique: true
+    t.index ["family_id"], name: "index_consumption_logs_on_family_id"
+  end
+
   create_table "families", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "unit_preference", default: 0, null: false
+    t.string "timezone"
   end
 
   create_table "family_invitations", force: :cascade do |t|
@@ -46,18 +59,62 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_10_210459) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "status", default: 0, null: false
+    t.integer "product_id"
+    t.integer "source", default: 1, null: false
+    t.json "recipe_ids", default: [], null: false
+    t.index ["family_id", "product_id"], name: "idx_grocery_items_one_active_product", unique: true, where: "product_id IS NOT NULL AND status IN (0, 1)"
+    t.index ["family_id", "status"], name: "index_grocery_items_on_family_id_and_status"
     t.index ["family_id"], name: "index_grocery_items_on_family_id"
+    t.index ["product_id"], name: "index_grocery_items_on_product_id"
   end
 
   create_table "ingredients", force: :cascade do |t|
     t.integer "recipe_id", null: false
-    t.string "name", null: false
     t.integer "unit", null: false
     t.decimal "quantity", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "aisle", default: 14, null: false
+    t.integer "product_id", null: false
+    t.string "name_override"
+    t.index ["product_id"], name: "index_ingredients_on_product_id"
     t.index ["recipe_id"], name: "index_ingredients_on_recipe_id"
+  end
+
+  create_table "pantry_entries", force: :cascade do |t|
+    t.integer "family_id", null: false
+    t.integer "product_id", null: false
+    t.decimal "quantity_remaining", precision: 10, scale: 3, default: "0.0", null: false
+    t.datetime "last_acquired", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["family_id", "product_id"], name: "index_pantry_entries_on_family_id_and_product_id", unique: true
+    t.index ["family_id"], name: "index_pantry_entries_on_family_id"
+    t.index ["product_id"], name: "index_pantry_entries_on_product_id"
+  end
+
+  create_table "product_suggestions", force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "aisle", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "LOWER(TRIM(name))", name: "idx_product_suggestions_name_ci", unique: true
+  end
+
+  create_table "products", force: :cascade do |t|
+    t.integer "family_id", null: false
+    t.string "name", null: false
+    t.integer "aisle", null: false
+    t.decimal "quantity", precision: 10, scale: 3
+    t.integer "unit", default: 12, null: false
+    t.integer "pack_count"
+    t.integer "reminder_frequency_value"
+    t.integer "reminder_frequency_unit"
+    t.boolean "is_kitchen_basic", default: false, null: false
+    t.json "conversions", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "family_id, LOWER(TRIM(name))", name: "idx_products_family_name_ci", unique: true
+    t.index ["family_id"], name: "index_products_on_family_id"
   end
 
   create_table "recipes", force: :cascade do |t|
@@ -123,12 +180,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_10_210459) do
     t.index ["family_id"], name: "index_users_on_family_id"
   end
 
+  add_foreign_key "consumption_logs", "families"
   add_foreign_key "family_invitations", "families"
   add_foreign_key "family_invitations", "users", column: "from_user_id"
   add_foreign_key "family_invitations", "users", column: "to_user_id"
   add_foreign_key "food_items", "families"
   add_foreign_key "grocery_items", "families"
+  add_foreign_key "grocery_items", "products"
+  add_foreign_key "ingredients", "products"
   add_foreign_key "ingredients", "recipes"
+  add_foreign_key "pantry_entries", "families"
+  add_foreign_key "pantry_entries", "products"
+  add_foreign_key "products", "families"
   add_foreign_key "recipes", "families"
   add_foreign_key "schedule_days", "families"
   add_foreign_key "schedule_items", "recipes"
@@ -136,4 +199,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_10_210459) do
   add_foreign_key "session_tokens", "users"
   add_foreign_key "todos", "users"
   add_foreign_key "users", "families"
+
+  # Virtual tables defined in this database.
+  # Note that virtual tables may not work with other database engines. Be careful if changing database.
+  create_virtual_table "product_search_entries", "fts5", ["source_type UNINDEXED", "source_id UNINDEXED", "family_id UNINDEXED", "name", "aisle UNINDEXED", "is_kitchen_basic UNINDEXED", "tokenize = 'unicode61'", "prefix = '2 3 4'"]
 end

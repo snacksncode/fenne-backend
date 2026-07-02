@@ -1,0 +1,57 @@
+# Smith Family Products
+smith_fixture_spaghetti:
+  family: smith_family
+  name: Fixture Spaghetti
+  aisle: 5
+  unit: 12
+  is_kitchen_basic: false
+  conversions: {}
+
+smith_fixture_eggs:
+  family: smith_family
+  name: Fixture Eggs
+  aisle: 2
+  unit: 12
+  is_kitchen_basic: false
+  conversions: {}
+
+smith_fixture_butter:
+  family: smith_family
+  name: Fixture Butter
+  aisle: 2
+  unit: 12
+  is_kitchen_basic: false
+  conversions: {}
+
+# Johnson Family Products
+johnson_fixture_salmon:
+  family: johnson_family
+  name: Fixture Salmon
+  aisle: 4
+  unit: 12
+  is_kitchen_basic: false
+  conversions: {}
+
+johnson_fixture_lemon:
+  family: johnson_family
+  name: Fixture Lemon
+  aisle: 0
+  unit: 12
+  is_kitchen_basic: false
+  conversions: {}
+
+johnson_fixture_beef:
+  family: johnson_family
+  name: Fixture Beef
+  aisle: 3
+  unit: 12
+  is_kitchen_basic: false
+  conversions: {}
+
+johnson_fixture_salt:
+  family: johnson_family
+  name: Fixture Salt
+  aisle: 10
+  unit: 12
+  is_kitchen_basic: false
+  conversions: {}

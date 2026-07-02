@@ -3,51 +3,51 @@
 # Smith Family - Pasta Carbonara Ingredients
 pasta_carbonara_pasta:
   recipe: pasta_carbonara_smith
-  name: Spaghetti
+  product: smith_fixture_spaghetti
   quantity: 400
   unit: 0
 
 pasta_carbonara_eggs:
   recipe: pasta_carbonara_smith
-  name: Eggs
+  product: smith_fixture_eggs
   quantity: 3
   unit: 12
 
 # Smith Family - Scrambled Eggs Ingredients
 scrambled_eggs_eggs:
   recipe: scrambled_eggs_smith
-  name: Eggs
+  product: smith_fixture_eggs
   quantity: 2
   unit: 12
 
 scrambled_eggs_butter:
   recipe: scrambled_eggs_smith
-  name: Butter
+  product: smith_fixture_butter
   quantity: 1
   unit: 6
 
 # Johnson Family - Grilled Salmon Ingredients
 grilled_salmon_salmon:
   recipe: grilled_salmon_johnson
-  name: Salmon Fillet
+  product: johnson_fixture_salmon
   quantity: 200
   unit: 0
 
 grilled_salmon_lemon:
   recipe: grilled_salmon_johnson
-  name: Lemon
+  product: johnson_fixture_lemon
   quantity: 1
   unit: 12
 
 # Johnson Family - Beef Steak Ingredients
 beef_steak_beef:
   recipe: beef_steak_johnson
-  name: Beef
+  product: johnson_fixture_beef
   quantity: 300
   unit: 0
 
 beef_steak_salt:
   recipe: beef_steak_johnson
-  name: Salt
+  product: johnson_fixture_salt
   quantity: 1
   unit: 0

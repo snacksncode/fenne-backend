@@ -1,49 +1,33 @@
 require "test_helper"
 
 class IngredientTest < ActiveSupport::TestCase
-  test "validates name presence" do
+  test "validates product presence" do
     ingredient = Ingredient.new(
       recipe: recipes(:pasta_carbonara_smith),
       quantity: 1,
-      unit: :cup,
-      aisle: :produce
+      unit: :cup
     )
 
     assert_not ingredient.valid?
-    assert_includes ingredient.errors[:name], "can't be blank"
+    assert_includes ingredient.errors[:product], "must exist"
   end
 
   test "validates unit presence" do
     ingredient = Ingredient.new(
       recipe: recipes(:pasta_carbonara_smith),
-      name: "Flour",
-      quantity: 1,
-      aisle: :produce
+      product: products(:smith_fixture_spaghetti),
+      quantity: 1
     )
 
     assert_not ingredient.valid?
     assert_includes ingredient.errors[:unit], "can't be blank"
   end
 
-  test "validates aisle presence" do
-    ingredient = Ingredient.new(
-      recipe: recipes(:pasta_carbonara_smith),
-      name: "Flour",
-      quantity: 1,
-      unit: :cup,
-      aisle: nil
-    )
-
-    assert_not ingredient.valid?
-    assert_includes ingredient.errors[:aisle], "can't be blank"
-  end
-
   test "validates quantity presence" do
     ingredient = Ingredient.new(
       recipe: recipes(:pasta_carbonara_smith),
-      name: "Flour",
-      unit: :cup,
-      aisle: :produce
+      product: products(:smith_fixture_spaghetti),
+      unit: :cup
     )
 
     assert_not ingredient.valid?
@@ -53,10 +37,9 @@ class IngredientTest < ActiveSupport::TestCase
   test "validates quantity is greater than 0" do
     ingredient = Ingredient.new(
       recipe: recipes(:pasta_carbonara_smith),
-      name: "Flour",
+      product: products(:smith_fixture_spaghetti),
       quantity: 0,
-      unit: :cup,
-      aisle: :produce
+      unit: :cup
     )
 
     assert_not ingredient.valid?
@@ -72,10 +55,21 @@ class IngredientTest < ActiveSupport::TestCase
   test "valid with all required attributes" do
     ingredient = Ingredient.new(
       recipe: recipes(:pasta_carbonara_smith),
-      name: "Sugar",
+      product: products(:smith_fixture_spaghetti),
       quantity: 2,
-      unit: :tbsp,
-      aisle: :spices_baking
+      unit: :tbsp
+    )
+
+    assert ingredient.valid?
+  end
+
+  test "allows optional recipe-side name override" do
+    ingredient = Ingredient.new(
+      recipe: recipes(:pasta_carbonara_smith),
+      product: products(:smith_fixture_eggs),
+      name_override: "Yolk",
+      quantity: 1,
+      unit: :count
     )
 
     assert ingredient.valid?
