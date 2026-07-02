@@ -15,7 +15,7 @@ module V2Rendering
 
   def normalize_errors(errors)
     return errors.to_hash(true) if errors.is_a?(ActiveModel::Errors)
-    return errors if errors.is_a?(Hash)
+    return errors.transform_keys { |key| key.nil? ? :base : key } if errors.is_a?(Hash)
 
     {base: Array(errors)}
   end

@@ -10,9 +10,12 @@ class RecipeSerializer
       ingredients: recipe.ingredients.map do |ingredient|
         {
           id: ingredient.id.to_s,
-          name: ingredient.name,
+          product_id: ingredient.product_id.to_s,
+          product: ProductSerializer.render(ingredient.product),
+          name: ingredient.name_override.presence || ingredient.product.name,
+          name_override: ingredient.name_override,
           unit: ingredient.unit,
-          aisle: ingredient.aisle,
+          aisle: ingredient.product.aisle,
           quantity: ingredient.quantity.to_f
         }
       end
