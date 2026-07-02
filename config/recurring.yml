@@ -1,4 +1,8 @@
-# production:
+production:
+  auto_consume:
+    class: AutoConsumeJob
+    queue: default
+    schedule: every hour
 #   periodic_cleanup:
 #     class: CleanSoftDeletedRecordsJob
 #     queue: background
