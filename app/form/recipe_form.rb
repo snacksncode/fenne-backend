@@ -30,14 +30,20 @@ class RecipeForm
 
       if ingredients.present?
         recipe.ingredients.destroy_all
-        ingredients.each do |ingredient_attributes|
+        ingredients.each_with_index do |ingredient_attributes, ingredient_index|
           attrs = ingredient_attributes.to_h.deep_symbolize_keys
           product = find_or_create_product!(attrs)
           unless ProductQuantity.ingredient_unit_compatible?(product, attrs.fetch(:unit))
             @missing_conversions ||= []
-            @missing_conversions << attrs.fetch(:unit).to_s
+            @missing_conversions << {
+              ingredient_index: ingredient_index,
+              product_id: attrs.dig(:product, :id)&.to_s,
+              product_name: product.name,
+              ingredient_unit: attrs.fetch(:unit).to_s,
+              product_unit: product.unit.to_s
+            }
             errors.add(:missing_conversions, "missing")
-            raise ActiveRecord::Rollback
+            next
           end
 
           recipe.ingredients.create!(
@@ -47,6 +53,7 @@ class RecipeForm
             unit: attrs.fetch(:unit)
           )
         end
+        raise ActiveRecord::Rollback if missing_conversions.any?
       end
 
       true

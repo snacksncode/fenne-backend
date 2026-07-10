@@ -74,8 +74,62 @@ class V2RecipesControllerTest < ActionDispatch::IntegrationTest
       as: :json
 
     assert_response :unprocessable_entity
-    assert_equal ["tbsp"], response.parsed_body.dig("errors", "missing_conversions")
+    assert_equal [
+      {
+        "ingredient_index" => 0,
+        "product_id" => product.id.to_s,
+        "product_name" => "Butter",
+        "ingredient_unit" => "tbsp",
+        "product_unit" => "g"
+      }
+    ], response.parsed_body.dig("errors", "missing_conversions")
     assert_equal({}, product.reload.conversions)
+  end
+
+  test "recipe save reports every missing conversion with ingredient context and rolls back" do
+    user = users(:john_smith)
+    product = Product.create!(family: user.family, name: "Conversion Butter", aisle: :dairy_eggs, quantity: 200, unit: :g)
+
+    assert_no_difference(["Recipe.count", "Product.count", "Ingredient.count"]) do
+      post "/v2/recipes",
+        params: {
+          name: "Conversion Test Recipe",
+          meal_types: ["breakfast"],
+          time_in_minutes: 5,
+          ingredients: [
+            {
+              quantity: 1,
+              unit: "tbsp",
+              product: {id: product.id}
+            },
+            {
+              quantity: 1,
+              unit: "cup",
+              product: {name: "Conversion Flour", aisle: "spices_baking", quantity: 500, unit: "g"}
+            }
+          ]
+        },
+        headers: auth_headers_for(user),
+        as: :json
+    end
+
+    assert_response :unprocessable_entity
+    assert_equal [
+      {
+        "ingredient_index" => 0,
+        "product_id" => product.id.to_s,
+        "product_name" => "Conversion Butter",
+        "ingredient_unit" => "tbsp",
+        "product_unit" => "g"
+      },
+      {
+        "ingredient_index" => 1,
+        "product_id" => nil,
+        "product_name" => "Conversion Flour",
+        "ingredient_unit" => "cup",
+        "product_unit" => "g"
+      }
+    ], response.parsed_body.dig("errors", "missing_conversions")
   end
 
   test "recipe ingredient can override and clear product display name" do

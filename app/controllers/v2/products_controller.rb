@@ -66,6 +66,7 @@ module V2
         invalidate_products!
         invalidate_pantry!
         invalidate_groceries!
+        invalidate_recipes!
         render_success(ProductSerializer.render(form.target))
       elsif form.errors.attribute_names.include?(:impact)
         render_error({ impact: form.impact }, status: :precondition_required)

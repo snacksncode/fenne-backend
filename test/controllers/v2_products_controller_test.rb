@@ -118,6 +118,50 @@ class V2ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "g", grocery.unit
   end
 
+  test "same dimension measured unit change converts stored product conversions" do
+    user = users(:john_smith)
+    product = Product.create!(
+      family: user.family,
+      name: "Conversion Yogurt",
+      aisle: :dairy_eggs,
+      quantity: 500,
+      unit: :g,
+      conversions: {"tbsp" => 15}
+    )
+
+    patch "/v2/products/#{product.id}",
+      params: {quantity: 0.5, unit: "kg"},
+      headers: auth_headers_for(user),
+      as: :json
+
+    assert_response :success
+    assert_in_delta 0.015, product.reload.conversions.fetch("tbsp").to_f
+  end
+
+  test "cross dimension measured unit change rejects stale product conversions" do
+    user = users(:john_smith)
+    product = Product.create!(
+      family: user.family,
+      name: "Conversion Sauce",
+      aisle: :condiments_sauces,
+      quantity: 500,
+      unit: :g,
+      conversions: {"tbsp" => 15}
+    )
+    recipe = Recipe.create!(family: user.family, name: "Conversion Dip", meal_types: [:lunch], time_in_minutes: 5)
+    recipe.ingredients.create!(product: product, quantity: 1, unit: :tbsp)
+
+    patch "/v2/products/#{product.id}",
+      params: {quantity: 500, unit: "ml"},
+      headers: auth_headers_for(user),
+      as: :json
+
+    assert_response :unprocessable_entity
+    assert_equal ["tbsp"], response.parsed_body.dig("errors", "missing_conversions")
+    assert_equal "g", product.reload.unit
+    assert_equal 15, product.conversions.fetch("tbsp")
+  end
+
   test "equivalent measured unit change still reports shopping impact when pack count changes" do
     user = users(:john_smith)
     product = Product.create!(family: user.family, name: "Flour", aisle: :spices_baking, quantity: 1, unit: :kg)

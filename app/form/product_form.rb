@@ -19,8 +19,10 @@ class ProductForm
       @target = product
       previous_shape = product.persisted? ? product.shape : nil
       previous_unit = product.unit
+      previous_conversions = product.conversions.to_h
 
       assign_product(product)
+      normalize_conversions_for_unit_change!(product, previous_shape, previous_unit, previous_conversions)
       validate_update!(product, previous_shape, previous_unit) if product.persisted?
 
       product.save!
@@ -81,6 +83,22 @@ class ProductForm
 
   def merged_conversions(current, supplied)
     (current || {}).merge((supplied || {}).to_h.transform_keys(&:to_s))
+  end
+
+  def normalize_conversions_for_unit_change!(product, previous_shape, previous_unit, previous_conversions)
+    return unless previous_shape == :measured && product.shape == :measured
+    return if previous_unit == product.unit
+
+    supplied = field_supplied?(:conversions) ? (conversions || {}).to_h.transform_keys(&:to_s) : {}
+    factor = Conversion.factor(previous_unit, product.unit)
+    product.conversions = if factor
+      converted = previous_conversions.transform_values do |value|
+        (BigDecimal(value.to_s) * BigDecimal(factor.to_s)).to_f
+      end
+      converted.merge(supplied)
+    else
+      supplied
+    end
   end
 
   def missing_recipe_conversions(product)
