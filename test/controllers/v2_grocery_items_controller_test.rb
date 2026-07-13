@@ -272,6 +272,39 @@ class V2GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ recipe.id ], item.recipe_ids
   end
 
+  test "add from recipe normalizes a counted product in any ingredient unit to one grocery unit" do
+    user = users(:john_smith)
+    recipe = Recipe.create!(family: user.family, name: "Avocado Lunch", meal_types: [ :lunch ], time_in_minutes: 10)
+    second_recipe = Recipe.create!(family: user.family, name: "Avocado Dinner", meal_types: [ :dinner ], time_in_minutes: 10)
+    product = Product.create!(family: user.family, name: "Avocado", aisle: :produce, unit: :count)
+    recipe.ingredients.create!(product: product, quantity: 2, unit: :tbsp)
+    second_recipe.ingredients.create!(product: product, quantity: 300, unit: :g)
+
+    assert_difference("GroceryItem.count", 1) do
+      post "/v2/grocery_items/from_recipe",
+        params: { recipe_id: recipe.id },
+        headers: auth_headers_for(user),
+        as: :json
+    end
+
+    assert_response :created
+    item = GroceryItem.find_by!(product: product)
+    assert_equal 1.0, item.quantity.to_f
+    assert_equal "count", item.unit
+    assert_equal [ recipe.id ], item.recipe_ids
+
+    assert_no_difference("GroceryItem.count") do
+      post "/v2/grocery_items/from_recipe",
+        params: { recipe_id: second_recipe.id },
+        headers: auth_headers_for(user),
+        as: :json
+    end
+
+    assert_response :created
+    assert_equal 2.0, item.reload.quantity.to_f
+    assert_equal [ recipe.id, second_recipe.id ].sort, item.recipe_ids.sort
+  end
+
   test "show resolves generated grocery item recipes through the item family" do
     user = users(:john_smith)
     recipe = recipes(:scrambled_eggs_smith)

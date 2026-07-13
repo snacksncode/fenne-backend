@@ -6,5 +6,4 @@ class Family < ApplicationRecord
   has_many :products, dependent: :destroy
   has_many :pantry_entries, dependent: :destroy
   has_many :consumption_logs, dependent: :destroy
-  enum :unit_preference, { metric: 0, imperial: 1 }
 end

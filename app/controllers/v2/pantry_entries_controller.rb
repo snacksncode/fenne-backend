@@ -5,8 +5,6 @@ module V2
         required(:product_id).filled(:integer)
         optional(:quantity_remaining).maybe(:float)
         optional(:last_acquired).maybe(:string)
-        optional(:reminder_frequency_value).maybe(:integer, gt?: 0)
-        optional(:reminder_frequency_unit).maybe(:string, included_in?: %w[days weeks months])
       end
     end
 
@@ -14,8 +12,6 @@ module V2
       params do
         optional(:quantity_remaining).maybe(:float)
         optional(:last_acquired).maybe(:string)
-        optional(:reminder_frequency_value).maybe(:integer, gt?: 0)
-        optional(:reminder_frequency_unit).maybe(:string, included_in?: %w[days weeks months])
       end
     end
 
@@ -34,10 +30,9 @@ module V2
 
       if add.add(
         quantity_remaining: attrs[:quantity_remaining],
-        last_acquired: attrs[:last_acquired],
-        **reminder_attrs(attrs)
+        last_acquired: attrs[:last_acquired]
       )
-        invalidate_pantry_write!(add)
+        invalidate_pantry!
         render_success(PantryEntrySerializer.render(add.entry), status: add.created? ? :created : :ok)
       else
         render_error(add.errors)
@@ -50,10 +45,9 @@ module V2
 
       if update.set(
         quantity_remaining: attrs[:quantity_remaining],
-        last_acquired: attrs[:last_acquired],
-        **reminder_attrs(attrs)
+        last_acquired: attrs[:last_acquired]
       )
-        invalidate_pantry_write!(update)
+        invalidate_pantry!
         return render_success if update.entry.destroyed?
 
         render_success(PantryEntrySerializer.render(update.entry))
@@ -84,18 +78,6 @@ module V2
 
     def pantry_entry_update_params
       validate_params!(UpdatePantryEntryContract)
-    end
-
-    def reminder_attrs(attrs)
-      attrs.slice(:reminder_frequency_value, :reminder_frequency_unit)
-    end
-
-    def invalidate_pantry_write!(writer)
-      invalidate_pantry!
-      return unless writer.product_changed?
-
-      invalidate_products!
-      invalidate_groceries!
     end
   end
 end

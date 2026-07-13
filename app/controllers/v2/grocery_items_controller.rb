@@ -63,6 +63,12 @@ module V2
       end
     end
 
+    class AddFromRecipeContract < Dry::Validation::Contract
+      params do
+        required(:recipe_id).filled(:integer)
+      end
+    end
+
     def index
       items = grocery_items.detail
       render_success(GroceryItemSerializer.render_many(items))
@@ -135,6 +141,18 @@ module V2
       render_success
     rescue ArgumentError => e
       render_error({ base: [ e.message ] }, status: :bad_request)
+    end
+
+    def from_recipe
+      data = validate_params!(AddFromRecipeContract)
+      recipe = @current_user.family.recipes.find(data[:recipe_id])
+
+      RecipeGroceryListAdder.call(family: @current_user.family, recipe: recipe)
+
+      invalidate_groceries!
+      render_success(status: :created)
+    rescue ArgumentError => e
+      render_error({ base: [ e.message ] }, status: :unprocessable_entity)
     end
 
     def checkout

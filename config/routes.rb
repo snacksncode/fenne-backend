@@ -35,6 +35,7 @@ Rails.application.routes.draw do
     get "/grocery_items/preview", to: "grocery_items#preview"
     post "/grocery_items/checkout", to: "grocery_items#checkout"
     post "/grocery_items/generate", to: "grocery_items#generate"
+    post "/grocery_items/from_recipe", to: "grocery_items#from_recipe"
     resources :grocery_items
 
     resources :recipes

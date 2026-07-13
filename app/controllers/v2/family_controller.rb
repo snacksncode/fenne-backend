@@ -2,7 +2,6 @@ module V2
   class FamilyController < ApplicationController
     class PreferencesContract < Dry::Validation::Contract
       params do
-        optional(:unit_preference).filled(:string, included_in?: Family.unit_preferences.keys.map(&:to_s))
         optional(:timezone).filled(:string)
       end
 

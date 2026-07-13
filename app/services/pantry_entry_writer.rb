@@ -1,8 +1,6 @@
 class PantryEntryWriter
   include ActiveModel::Model
 
-  UNCHANGED = Object.new.freeze
-
   attr_reader :entry, :actually_deducted
 
   def initialize(family:, product: nil, entry: nil)
@@ -10,24 +8,14 @@ class PantryEntryWriter
     @entry = entry
     @product = product || entry&.product
     @created = false
-    @product_changed = false
   end
 
-  def add(
-    quantity_remaining: nil,
-    last_acquired: nil,
-    reminder_frequency_value: UNCHANGED,
-    reminder_frequency_unit: UNCHANGED
-  )
+  def add(quantity_remaining: nil, last_acquired: nil)
     return false unless product_present?
     return false unless pantry_allowed?
     return false unless valid_last_acquired?(last_acquired)
 
     PantryEntry.transaction do
-      update_product_reminder!(
-        reminder_frequency_value: reminder_frequency_value,
-        reminder_frequency_unit: reminder_frequency_unit
-      )
       raise InvalidWriterState unless product.timed? || valid_positive_quantity?(quantity_remaining)
 
       @entry = family.pantry_entries.lock.find_or_initialize_by(product: product)
@@ -45,22 +33,12 @@ class PantryEntryWriter
     false
   end
 
-  def set(
-    quantity_remaining: nil,
-    last_acquired: nil,
-    reminder_frequency_value: UNCHANGED,
-    reminder_frequency_unit: UNCHANGED
-  )
+  def set(quantity_remaining: nil, last_acquired: nil)
     return false unless product_present?
     return false unless pantry_allowed?
     return false unless valid_last_acquired?(last_acquired)
 
     PantryEntry.transaction do
-      update_product_reminder!(
-        reminder_frequency_value: reminder_frequency_value,
-        reminder_frequency_unit: reminder_frequency_unit
-      )
-
       if quantity_remaining.present? && !product.timed?
         quantity = decimal_quantity(quantity_remaining)
         if quantity <= 0
@@ -133,10 +111,6 @@ class PantryEntryWriter
     @created
   end
 
-  def product_changed?
-    @product_changed
-  end
-
   private
 
   class InvalidWriterState < StandardError; end
@@ -180,22 +154,5 @@ class PantryEntryWriter
     BigDecimal(value.to_s)
   rescue ArgumentError
     0.to_d
-  end
-
-  def update_product_reminder!(reminder_frequency_value:, reminder_frequency_unit:)
-    return unless reminder_supplied?(reminder_frequency_value) || reminder_supplied?(reminder_frequency_unit)
-
-    product.reminder_frequency_value = reminder_value(reminder_frequency_value) if reminder_supplied?(reminder_frequency_value)
-    product.reminder_frequency_unit = reminder_frequency_unit if reminder_supplied?(reminder_frequency_unit)
-    @product_changed ||= product.changed?
-    product.save!
-  end
-
-  def reminder_supplied?(value)
-    value != UNCHANGED
-  end
-
-  def reminder_value(value)
-    value.blank? ? nil : value.to_i
   end
 end

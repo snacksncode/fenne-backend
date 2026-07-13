@@ -1,4 +1,6 @@
 class ProductSearchIndex
+  require "set"
+
   SEARCH_POOL_LIMIT = 30
   SEARCH_RESULT_LIMIT = 10
 
@@ -7,9 +9,10 @@ class ProductSearchIndex
       fts_query = build_fts_query(query)
       return [] if fts_query.blank?
 
+      existing_product_names = normalized_product_names(family)
       rows = search_rows(fts_query:, query:, family:, context:)
       hydrate(rows, family:)
-        .reject { |result| duplicate_suggestion?(result, family) }
+        .reject { |result| duplicate_suggestion?(result, existing_product_names) }
         .first(SEARCH_RESULT_LIMIT)
     end
 
@@ -112,10 +115,14 @@ class ProductSearchIndex
       end
     end
 
-    def duplicate_suggestion?(result, family)
+    def normalized_product_names(family)
+      family.products.pluck(Arel.sql("LOWER(TRIM(name))")).to_set
+    end
+
+    def duplicate_suggestion?(result, existing_product_names)
       return false unless result[:type] == :suggestion
 
-      family.products.where("LOWER(TRIM(name)) = ?", normalize(result[:record].name)).exists?
+      existing_product_names.include?(normalize(result[:record].name))
     end
 
     def insert(source_type:, source_id:, family_id:, name:, aisle:, is_kitchen_basic:)
