@@ -27,7 +27,7 @@ class ProductTest < ActiveSupport::TestCase
     assert_equal :measured, product.shape
   end
 
-  test "reminder and kitchen basic modes cannot retain a measured unit" do
+  test "reminder and kitchen basic modes can retain a measured unit" do
     reminder = Product.new(
       family: families(:smith_family),
       name: "Coffee",
@@ -44,10 +44,10 @@ class ProductTest < ActiveSupport::TestCase
       is_kitchen_basic: true
     )
 
-    assert_not reminder.valid?
-    assert_not kitchen_basic.valid?
-    assert_includes reminder.errors[:base], "tracking modes are mutually exclusive"
-    assert_includes kitchen_basic.errors[:base], "tracking modes are mutually exclusive"
+    assert reminder.valid?
+    assert kitchen_basic.valid?
+    assert_equal :timed, reminder.shape
+    assert_equal :kitchen_basic, kitchen_basic.shape
   end
 
   test "reminder and kitchen basic modes are mutually exclusive for count products" do

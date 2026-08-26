@@ -44,10 +44,10 @@ class V2ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "counted", response.parsed_body.dig("data", "shape")
   end
 
-  test "create rejects combining a measured unit with reminder mode" do
+  test "create preserves a measured unit for reminder mode" do
     user = users(:john_smith)
 
-    assert_no_difference("Product.count") do
+    assert_difference("Product.count", 1) do
       post "/v2/products",
         params: {
           name: "Coffee",
@@ -60,9 +60,9 @@ class V2ProductsControllerTest < ActionDispatch::IntegrationTest
         as: :json
     end
 
-    assert_response :unprocessable_entity
-    assert_equal "error", response.parsed_body["status"]
-    assert_equal [ "tracking modes are mutually exclusive" ], response.parsed_body.dig("errors", "base")
+    assert_response :created
+    assert_equal "timed", response.parsed_body.dig("data", "shape")
+    assert_equal "g", response.parsed_body.dig("data", "unit")
   end
 
   test "destructive product edit returns impact and acknowledged retry clears impacted rows" do

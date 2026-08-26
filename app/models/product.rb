@@ -55,9 +55,7 @@ class Product < ApplicationRecord
   end
 
   def mutual_exclusivity
-    special_modes_conflict = timed? && kitchen_basic?
-    tracked_unit_conflicts = !unit_count? && (timed? || kitchen_basic?)
-    return unless special_modes_conflict || tracked_unit_conflicts
+    return unless timed? && kitchen_basic?
 
     errors.add(:base, "tracking modes are mutually exclusive")
   end
