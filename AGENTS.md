@@ -2,6 +2,10 @@
 
 Follow the current API conventions in this file when adding or changing backend behavior.
 
+## Commits
+
+- Use Conventional Commits format for commit messages, such as `fix: ...`, `feat: ...`, or `chore: ...`.
+
 ## API Shape
 
 - Responses are wrapped.

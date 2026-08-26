@@ -6,7 +6,7 @@ class V2ProductsControllerTest < ActionDispatch::IntegrationTest
 
     assert_difference("Product.count", 1) do
       post "/v2/products",
-        params: { name: "Sour Cream", aisle: "dairy_eggs", quantity: 200, unit: "g" },
+        params: { name: "Sour Cream", aisle: "dairy_eggs", unit: "g" },
         headers: auth_headers_for(user),
         as: :json
     end
@@ -30,18 +30,39 @@ class V2ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_equal true, response.parsed_body.dig("data", "exists")
   end
 
-  test "create rejects quantity with count unit" do
+  test "create defaults to counted tracking when unit is count" do
+    user = users(:john_smith)
+
+    assert_difference("Product.count", 1) do
+      post "/v2/products",
+        params: { name: "Eggs", aisle: "dairy_eggs", unit: "count" },
+        headers: auth_headers_for(user),
+        as: :json
+    end
+
+    assert_response :created
+    assert_equal "counted", response.parsed_body.dig("data", "shape")
+  end
+
+  test "create rejects combining a measured unit with reminder mode" do
     user = users(:john_smith)
 
     assert_no_difference("Product.count") do
       post "/v2/products",
-        params: { name: "Eggs", aisle: "dairy_eggs", quantity: 12, unit: "count" },
+        params: {
+          name: "Coffee",
+          aisle: "pantry",
+          unit: "g",
+          reminder_frequency_value: 2,
+          reminder_frequency_unit: "weeks"
+        },
         headers: auth_headers_for(user),
         as: :json
     end
 
     assert_response :unprocessable_entity
-    assert_equal [ "Quantity cannot be used with count unit" ], response.parsed_body.dig("errors", "quantity")
+    assert_equal "error", response.parsed_body["status"]
+    assert_equal [ "tracking modes are mutually exclusive" ], response.parsed_body.dig("errors", "base")
   end
 
   test "destructive product edit returns impact and acknowledged retry clears impacted rows" do
@@ -85,7 +106,7 @@ class V2ProductsControllerTest < ActionDispatch::IntegrationTest
     ingredient.update!(product: product)
 
     patch "/v2/products/#{product.id}",
-      params: { quantity: 200, unit: "g" },
+      params: { unit: "g" },
       headers: auth_headers_for(user),
       as: :json
 
@@ -95,7 +116,7 @@ class V2ProductsControllerTest < ActionDispatch::IntegrationTest
 
   test "same dimension measured unit change converts pantry and shopping quantities" do
     user = users(:john_smith)
-    product = Product.create!(family: user.family, name: "Flour", aisle: :spices_baking, quantity: 1, unit: :kg)
+    product = Product.create!(family: user.family, name: "Flour", aisle: :spices_baking, unit: :kg)
     pantry = PantryEntry.create!(family: user.family, product: product, quantity_remaining: 0.5, last_acquired: Time.current)
     grocery = GroceryItem.create!(
       family: user.family,
@@ -108,7 +129,7 @@ class V2ProductsControllerTest < ActionDispatch::IntegrationTest
     )
 
     patch "/v2/products/#{product.id}",
-      params: { quantity: 1000, unit: "g" },
+      params: { unit: "g" },
       headers: auth_headers_for(user),
       as: :json
 
@@ -124,13 +145,12 @@ class V2ProductsControllerTest < ActionDispatch::IntegrationTest
       family: user.family,
       name: "Conversion Yogurt",
       aisle: :dairy_eggs,
-      quantity: 500,
       unit: :g,
       conversions: {"tbsp" => 15}
     )
 
     patch "/v2/products/#{product.id}",
-      params: {quantity: 0.5, unit: "kg"},
+      params: {unit: "kg"},
       headers: auth_headers_for(user),
       as: :json
 
@@ -144,7 +164,6 @@ class V2ProductsControllerTest < ActionDispatch::IntegrationTest
       family: user.family,
       name: "Conversion Sauce",
       aisle: :condiments_sauces,
-      quantity: 500,
       unit: :g,
       conversions: {"tbsp" => 15}
     )
@@ -152,7 +171,7 @@ class V2ProductsControllerTest < ActionDispatch::IntegrationTest
     recipe.ingredients.create!(product: product, quantity: 1, unit: :tbsp)
 
     patch "/v2/products/#{product.id}",
-      params: {quantity: 500, unit: "ml"},
+      params: {unit: "ml"},
       headers: auth_headers_for(user),
       as: :json
 
@@ -162,9 +181,10 @@ class V2ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 15, product.conversions.fetch("tbsp")
   end
 
-  test "equivalent measured unit change still reports shopping impact when pack count changes" do
+  test "destroy removes associated pantry and grocery items" do
     user = users(:john_smith)
-    product = Product.create!(family: user.family, name: "Flour", aisle: :spices_baking, quantity: 1, unit: :kg)
+    product = Product.create!(family: user.family, name: "Rice", aisle: :pantry, unit: :count)
+    PantryEntry.create!(family: user.family, product: product, quantity_remaining: 2, last_acquired: Time.current)
     GroceryItem.create!(
       family: user.family,
       product: product,
@@ -175,27 +195,82 @@ class V2ProductsControllerTest < ActionDispatch::IntegrationTest
       status: :pending
     )
 
-    patch "/v2/products/#{product.id}",
-      params: { quantity: 1000, unit: "g", pack_count: 2 },
-      headers: auth_headers_for(user),
-      as: :json
+    assert_difference([ "Product.count", "PantryEntry.count", "GroceryItem.count" ], -1) do
+      assert_broadcasts("family_invalidation_stream_#{user.family.id}", 3) do
+        delete "/v2/products/#{product.id}",
+          headers: auth_headers_for(user),
+          as: :json
+      end
+    end
 
-    assert_response :precondition_required
-    assert_equal [ "shopping_list" ], response.parsed_body.dig("errors", "impact")
+    assert_response :success
   end
 
-  test "destroy rejects product with pantry stock" do
+  test "destroy removes an unreferenced product" do
     user = users(:john_smith)
-    product = Product.create!(family: user.family, name: "Rice", aisle: :pantry, unit: :count)
-    entry = PantryEntry.create!(family: user.family, product: product, quantity_remaining: 2, last_acquired: Time.current)
+    product = Product.create!(family: user.family, name: "Unused Item", aisle: :other, unit: :count)
 
-    assert_no_difference("Product.count") do
+    assert_difference("Product.count", -1) do
+      delete "/v2/products/#{product.id}",
+        headers: auth_headers_for(user),
+        as: :json
+    end
+
+    assert_response :success
+    assert_equal "success", response.parsed_body.fetch("status")
+  end
+
+  test "usages returns family recipes that reference the product" do
+    user = users(:john_smith)
+    ingredient = ingredients(:scrambled_eggs_butter)
+
+    get "/v2/products/#{ingredient.product_id}/usages",
+      headers: auth_headers_for(user)
+
+    assert_response :success
+    recipes = response.parsed_body.dig("data", "recipes")
+    assert_equal [ ingredient.recipe_id.to_s ], recipes.map { |recipe| recipe.fetch("id") }
+    assert_equal ingredient.recipe.name, recipes.first.fetch("name")
+  end
+
+  test "usages does not expose another family's product" do
+    user = users(:john_smith)
+    other_product = products(:johnson_fixture_salmon)
+
+    get "/v2/products/#{other_product.id}/usages",
+      headers: auth_headers_for(user)
+
+    assert_response :not_found
+    assert_equal "error", response.parsed_body.fetch("status")
+  end
+
+  test "destroy returns blocking recipes when product is used by a recipe" do
+    user = users(:john_smith)
+    ingredient = ingredients(:scrambled_eggs_butter)
+    product = ingredient.product
+    PantryEntry.create!(family: user.family, product: product, quantity_remaining: 1, last_acquired: Time.current)
+    GroceryItem.create!(
+      family: user.family,
+      product: product,
+      name: product.name,
+      aisle: product.aisle,
+      unit: product.unit,
+      quantity: 1,
+      status: :pending
+    )
+
+    assert_no_difference([ "Product.count", "PantryEntry.count", "GroceryItem.count" ]) do
       delete "/v2/products/#{product.id}",
         headers: auth_headers_for(user),
         as: :json
     end
 
     assert_response :conflict
-    assert_equal entry.id.to_s, response.parsed_body.dig("errors", "pantry_entries", 0, "id")
+    blocking_recipe = response.parsed_body.dig("errors", "recipes", 0)
+    assert_equal ingredient.recipe_id.to_s, blocking_recipe.fetch("id")
+    assert_equal ingredient.recipe.name, blocking_recipe.fetch("name")
+    assert blocking_recipe.fetch("ingredients").any?
+    assert_not response.parsed_body.fetch("errors").key?("pantry_entries")
+    assert_not response.parsed_body.fetch("errors").key?("grocery_items")
   end
 end

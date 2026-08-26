@@ -33,8 +33,7 @@ class RecipeGroceryListAdder
       .reject { |ingredient| ingredient.product.kitchen_basic? }
       .group_by(&:product)
       .transform_values do |ingredients|
-        product = ingredients.first.product
-        product.counted? ? 1.to_d : ingredients.sum { |ingredient| ProductQuantity.ingredient_need(ingredient) }
+        ingredients.sum { |ingredient| ProductQuantity.ingredient_need(ingredient) }
       end
   end
 end

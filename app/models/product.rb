@@ -5,7 +5,8 @@ class Product < ApplicationRecord
   belongs_to :family
   has_many :pantry_entries, dependent: :destroy
   has_many :ingredients
-  has_many :grocery_items
+  has_many :recipes, -> { distinct }, through: :ingredients
+  has_many :grocery_items, dependent: :destroy
 
   enum :reminder_frequency_unit, { days: 0, weeks: 1, months: 2 }, prefix: :reminder
 
@@ -14,18 +15,15 @@ class Product < ApplicationRecord
   after_commit :refresh_search_index, on: [ :create, :update ]
   after_commit :remove_search_index, on: :destroy
 
-  attr_reader :blocked_by_recipes, :blocked_by_grocery_items, :blocked_by_pantry_entries
+  attr_reader :blocked_by_recipes
 
   validates :name, :aisle, :unit, presence: true
   validates :name, uniqueness: { scope: :family_id, case_sensitive: false }
-  validates :quantity, numericality: { greater_than: 0, less_than_or_equal_to: 1_000_000 }, allow_nil: true
-  validates :pack_count, numericality: { only_integer: true, greater_than_or_equal_to: 2 }, allow_nil: true
   validates :reminder_frequency_value,
     numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: 3650 },
     allow_nil: true
   validate :mutual_exclusivity
   validate :reminder_fields_pair
-  validate :quantity_unit_compatibility
 
   def shape
     return :kitchen_basic if kitchen_basic?
@@ -43,11 +41,11 @@ class Product < ApplicationRecord
   end
 
   def measured?
-    quantity.present? && !unit_count?
+    !unit_count? && !timed? && !kitchen_basic?
   end
 
   def counted?
-    !kitchen_basic? && !timed? && !measured?
+    unit_count? && !timed? && !kitchen_basic?
   end
 
   private
@@ -57,8 +55,11 @@ class Product < ApplicationRecord
   end
 
   def mutual_exclusivity
-    modes = [ measured?, timed?, kitchen_basic? ].count(true)
-    errors.add(:base, "tracking modes are mutually exclusive") if modes > 1
+    special_modes_conflict = timed? && kitchen_basic?
+    tracked_unit_conflicts = !unit_count? && (timed? || kitchen_basic?)
+    return unless special_modes_conflict || tracked_unit_conflicts
+
+    errors.add(:base, "tracking modes are mutually exclusive")
   end
 
   def reminder_fields_pair
@@ -69,22 +70,12 @@ class Product < ApplicationRecord
     errors.add(:base, "reminder frequency value and unit must be set together")
   end
 
-  def quantity_unit_compatibility
-    return unless quantity.present? && unit_count?
-
-    errors.add(:quantity, "cannot be used with count unit")
-  end
-
   def prevent_delete_if_referenced
-    recipes = ingredients.includes(:recipe).map(&:recipe).uniq
-    grocery_rows = grocery_items.to_a
-    pantry_rows = pantry_entries.to_a
-    return if recipes.empty? && grocery_rows.empty? && pantry_rows.empty?
+    recipes = self.recipes.includes(ingredients: :product).to_a
+    return if recipes.empty?
 
     @blocked_by_recipes = recipes
-    @blocked_by_grocery_items = grocery_rows
-    @blocked_by_pantry_entries = pantry_rows
-    errors.add(:base, "product is referenced; swap or remove first")
+    errors.add(:base, "product is used in recipes; remove it from those recipes first")
     throw :abort
   end
 

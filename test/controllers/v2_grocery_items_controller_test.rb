@@ -42,7 +42,7 @@ class V2GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "manual add stores product quantity exactly in the product unit" do
     user = users(:john_smith)
-    product = Product.create!(family: user.family, name: "Sour Cream", aisle: :dairy_eggs, quantity: 200, unit: :g)
+    product = Product.create!(family: user.family, name: "Sour Cream", aisle: :dairy_eggs, unit: :g)
 
     post "/v2/grocery_items",
       params: { type: "product", product_id: product.id, quantity: 50, unit: "g" },
@@ -140,7 +140,7 @@ class V2GroceryItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "checkout adds completed measured item into pantry and clears shopping row" do
     user = users(:john_smith)
-    product = Product.create!(family: user.family, name: "Rice", aisle: :pantry, quantity: 500, unit: :g)
+    product = Product.create!(family: user.family, name: "Rice", aisle: :pantry, unit: :g)
     item = GroceryItem.create!(
       family: user.family,
       product: product,
@@ -272,6 +272,29 @@ class V2GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ recipe.id ], item.recipe_ids
   end
 
+  test "generate keeps the exact missing quantity for a measured product" do
+    user = users(:john_smith)
+    recipe = Recipe.create!(family: user.family, name: "Beef Bowl", meal_types: [ :dinner ], time_in_minutes: 20)
+    product = Product.create!(family: user.family, name: "Beef", aisle: :meat, unit: :g)
+    recipe.ingredients.create!(product: product, quantity: 250, unit: :g)
+    schedule_day = ScheduleDay.create!(family: user.family, date: Date.current, is_shopping_day: false)
+    ScheduleItem.create!(schedule_day: schedule_day, kind: :recipe, meal_type: :dinner, recipe: recipe)
+
+    post "/v2/grocery_items/generate",
+      params: {
+        start_date: Date.current.iso8601,
+        end_date: Date.current.iso8601,
+        checked_product_ids: [ product.id ]
+      },
+      headers: auth_headers_for(user),
+      as: :json
+
+    assert_response :success
+    item = GroceryItem.find_by!(product: product)
+    assert_equal 250.0, item.quantity.to_f
+    assert_equal "g", item.unit
+  end
+
   test "add from recipe normalizes a counted product in any ingredient unit to one grocery unit" do
     user = users(:john_smith)
     recipe = Recipe.create!(family: user.family, name: "Avocado Lunch", meal_types: [ :lunch ], time_in_minutes: 10)
@@ -303,6 +326,23 @@ class V2GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     assert_response :created
     assert_equal 2.0, item.reload.quantity.to_f
     assert_equal [ recipe.id, second_recipe.id ].sort, item.recipe_ids.sort
+  end
+
+  test "add from recipe keeps an exact counted ingredient quantity" do
+    user = users(:john_smith)
+    recipe = Recipe.create!(family: user.family, name: "Omelette", meal_types: [ :breakfast ], time_in_minutes: 10)
+    product = Product.create!(family: user.family, name: "Omelette Eggs", aisle: :dairy_eggs, unit: :count)
+    recipe.ingredients.create!(product: product, quantity: 6, unit: :count)
+
+    post "/v2/grocery_items/from_recipe",
+      params: { recipe_id: recipe.id },
+      headers: auth_headers_for(user),
+      as: :json
+
+    assert_response :created
+    item = GroceryItem.find_by!(product: product)
+    assert_equal 6.0, item.quantity.to_f
+    assert_equal "count", item.unit
   end
 
   test "show resolves generated grocery item recipes through the item family" do

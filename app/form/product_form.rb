@@ -1,7 +1,7 @@
 class ProductForm
   include ActiveModel::Model
 
-  attr_accessor :id, :family, :name, :aisle, :quantity, :unit, :pack_count,
+  attr_accessor :id, :family, :name, :aisle, :unit,
     :reminder_frequency_value, :reminder_frequency_unit, :is_kitchen_basic,
     :conversions, :impact_acknowledged
 
@@ -68,9 +68,7 @@ class ProductForm
   def assign_product(product)
     product.name = name if field_supplied?(:name)
     product.aisle = aisle if field_supplied?(:aisle)
-    product.quantity = decimal_or_nil(quantity) if field_supplied?(:quantity)
     product.unit = unit if field_supplied?(:unit)
-    product.pack_count = integer_or_nil(pack_count) if field_supplied?(:pack_count)
     product.reminder_frequency_value = integer_or_nil(reminder_frequency_value) if field_supplied?(:reminder_frequency_value)
     product.reminder_frequency_unit = reminder_frequency_unit if field_supplied?(:reminder_frequency_unit)
     product.is_kitchen_basic = is_kitchen_basic if field_supplied?(:is_kitchen_basic)
@@ -110,10 +108,6 @@ class ProductForm
   def handle_acknowledged_impact!(product)
     product.pantry_entries.destroy_all if impact.include?("pantry")
     product.grocery_items.destroy_all if impact.include?("shopping_list")
-  end
-
-  def decimal_or_nil(value)
-    value.blank? ? nil : BigDecimal(value.to_s)
   end
 
   def integer_or_nil(value)

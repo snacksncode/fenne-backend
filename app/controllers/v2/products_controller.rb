@@ -7,9 +7,7 @@ module V2
       params do
         required(:name).filled(:string)
         required(:aisle).filled(:string, included_in?: AISLE_TYPES)
-        optional(:quantity).maybe(:float, gt?: 0)
         required(:unit).filled(:string, included_in?: UNIT_TYPES)
-        optional(:pack_count).maybe(:integer, gteq?: 2)
         optional(:reminder_frequency_value).maybe(:integer, gt?: 0)
         optional(:reminder_frequency_unit).maybe(:string, included_in?: %w[days weeks months])
         optional(:is_kitchen_basic).filled(:bool)
@@ -22,9 +20,7 @@ module V2
       params do
         optional(:name).filled(:string)
         optional(:aisle).filled(:string, included_in?: AISLE_TYPES)
-        optional(:quantity).maybe(:float, gt?: 0)
         optional(:unit).filled(:string, included_in?: UNIT_TYPES)
-        optional(:pack_count).maybe(:integer, gteq?: 2)
         optional(:reminder_frequency_value).maybe(:integer, gt?: 0)
         optional(:reminder_frequency_unit).maybe(:string, included_in?: %w[days weeks months])
         optional(:is_kitchen_basic).filled(:bool)
@@ -46,6 +42,10 @@ module V2
 
     def show
       render_success(ProductSerializer.render(product))
+    end
+
+    def usages
+      render_success({ recipes: RecipeSerializer.render_many(product.recipes.includes(ingredients: :product).order(:name)) })
     end
 
     def create
@@ -84,6 +84,7 @@ module V2
 
       invalidate_products!
       invalidate_pantry!
+      invalidate_groceries!
       render_success
     end
 
@@ -116,9 +117,7 @@ module V2
     def product_delete_errors
       {
         base: product.errors.full_messages,
-        recipes: Array(product.blocked_by_recipes).map { |recipe| { id: recipe.id.to_s, name: recipe.name } },
-        grocery_items: Array(product.blocked_by_grocery_items).map { |item| { id: item.id.to_s, name: item.name } },
-        pantry_entries: Array(product.blocked_by_pantry_entries).map { |entry| { id: entry.id.to_s } }
+        recipes: RecipeSerializer.render_many(Array(product.blocked_by_recipes))
       }
     end
   end

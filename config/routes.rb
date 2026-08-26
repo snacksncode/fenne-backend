@@ -24,6 +24,9 @@ Rails.application.routes.draw do
     patch "/family/preferences", to: "family#preferences"
 
     resources :products do
+      member do
+        get :usages
+      end
       collection do
         get :name_collision
       end

@@ -41,7 +41,7 @@ class ProductQuantity
     missing = needed.to_d - pantry_quantity.to_d
     return 0.to_d if missing <= 0
 
-    round_for_purchase(missing)
+    product.counted? ? missing.ceil : missing
   end
 
   def running_low?
@@ -55,7 +55,6 @@ class ProductQuantity
     return true if product.kitchen_basic?
     return true if product.shape == :timed
     return true if product.shape == :counted
-    return true if unit.to_s == "count"
     return true if Conversion.same_dimension?(unit, product.unit)
 
     product.conversions.to_h.key?(unit.to_s)
@@ -66,8 +65,6 @@ class ProductQuantity
   attr_reader :product
 
   def measured_need(quantity, unit, allow_conversions:)
-    return quantity * product.quantity if unit.to_s == "count"
-
     factor = Conversion.factor(unit, product.unit)
     return quantity * BigDecimal(factor.to_s) if factor
     raise ArgumentError, "incompatible unit" unless allow_conversions
@@ -76,21 +73,6 @@ class ProductQuantity
     raise ArgumentError, "missing conversion for #{unit}" if conversion.blank?
 
     quantity * BigDecimal(conversion.to_s)
-  end
-
-  def round_for_purchase(missing)
-    return apply_pack_count(missing.ceil) if product.shape == :counted || product.shape == :timed
-    return missing if product.quantity.blank?
-
-    packs = (missing / product.quantity).ceil
-    packs = apply_pack_count(packs)
-    packs * product.quantity
-  end
-
-  def apply_pack_count(count)
-    return count unless product.pack_count.present?
-
-    (count.to_d / product.pack_count).ceil * product.pack_count
   end
 
   def reminder_threshold

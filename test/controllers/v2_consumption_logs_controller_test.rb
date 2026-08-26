@@ -29,7 +29,7 @@ class V2ConsumptionLogsControllerTest < ActionDispatch::IntegrationTest
   test "undo converts snapshot when measured product unit changed compatibly" do
     user = users(:john_smith)
     recipe = recipes(:scrambled_eggs_smith)
-    product = Product.create!(family: user.family, name: "Butter", aisle: :dairy_eggs, quantity: 1000, unit: :g)
+    product = Product.create!(family: user.family, name: "Butter", aisle: :dairy_eggs, unit: :g)
     ingredients(:scrambled_eggs_butter).update!(product: product, quantity: 100, unit: :g)
     PantryEntry.create!(family: user.family, product: product, quantity_remaining: 500, last_acquired: Time.current)
 
@@ -43,7 +43,7 @@ class V2ConsumptionLogsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 400.0, PantryEntry.find_by!(product: product).quantity_remaining.to_f
 
     patch "/v2/products/#{product.id}",
-      params: { quantity: 1, unit: "kg" },
+      params: { unit: "kg" },
       headers: auth_headers_for(user),
       as: :json
 
@@ -70,7 +70,7 @@ class V2ConsumptionLogsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :created
     log_id = response.parsed_body.dig("data", "id")
-    product.update_columns(quantity: 12, unit: Product.units[:g])
+    product.update_columns(unit: Product.units[:g])
 
     delete "/v2/consumption_logs/#{log_id}", headers: auth_headers_for(user)
 

@@ -14,7 +14,7 @@ class V2RecipesControllerTest < ActionDispatch::IntegrationTest
             {
               quantity: 150,
               unit: "g",
-              product: {name: "Rice", aisle: "pantry", quantity: 500, unit: "g"}
+              product: {name: "Rice", aisle: "pantry", unit: "g"}
             }
           ]
         },
@@ -30,7 +30,7 @@ class V2RecipesControllerTest < ActionDispatch::IntegrationTest
 
   test "recipe save ignores existing product fields beyond id" do
     user = users(:john_smith)
-    product = Product.create!(family: user.family, name: "Rice", aisle: :pantry, quantity: 500, unit: :g)
+    product = Product.create!(family: user.family, name: "Rice", aisle: :pantry, unit: :g)
 
     post "/v2/recipes",
       params: {
@@ -55,7 +55,7 @@ class V2RecipesControllerTest < ActionDispatch::IntegrationTest
 
   test "recipe save ignores submitted conversions for existing products" do
     user = users(:john_smith)
-    product = Product.create!(family: user.family, name: "Butter", aisle: :dairy_eggs, quantity: 200, unit: :g)
+    product = Product.create!(family: user.family, name: "Butter", aisle: :dairy_eggs, unit: :g)
 
     post "/v2/recipes",
       params: {
@@ -88,7 +88,7 @@ class V2RecipesControllerTest < ActionDispatch::IntegrationTest
 
   test "recipe save reports every missing conversion with ingredient context and rolls back" do
     user = users(:john_smith)
-    product = Product.create!(family: user.family, name: "Conversion Butter", aisle: :dairy_eggs, quantity: 200, unit: :g)
+    product = Product.create!(family: user.family, name: "Conversion Butter", aisle: :dairy_eggs, unit: :g)
 
     assert_no_difference(["Recipe.count", "Product.count", "Ingredient.count"]) do
       post "/v2/recipes",
@@ -105,7 +105,7 @@ class V2RecipesControllerTest < ActionDispatch::IntegrationTest
             {
               quantity: 1,
               unit: "cup",
-              product: {name: "Conversion Flour", aisle: "spices_baking", quantity: 500, unit: "g"}
+              product: {name: "Conversion Flour", aisle: "spices_baking", unit: "g"}
             }
           ]
         },
