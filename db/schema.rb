@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_12_090000) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_05_090000) do
   create_table "consumption_logs", force: :cascade do |t|
     t.integer "family_id", null: false
     t.integer "meal_type", null: false
@@ -61,6 +61,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_12_090000) do
     t.integer "product_id"
     t.integer "source", default: 1, null: false
     t.json "recipe_ids", default: [], null: false
+    t.decimal "needed_quantity", precision: 15, scale: 6
+    t.boolean "quantity_overridden", default: true, null: false
     t.index ["family_id", "product_id"], name: "idx_grocery_items_one_active_product", unique: true, where: "product_id IS NOT NULL AND status IN (0, 1)"
     t.index ["family_id", "status"], name: "index_grocery_items_on_family_id_and_status"
     t.index ["family_id"], name: "index_grocery_items_on_family_id"
@@ -112,6 +114,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_12_090000) do
     t.json "conversions", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "pack_sizes", default: [], null: false
     t.index "family_id, LOWER(TRIM(name))", name: "idx_products_family_name_ci", unique: true
     t.index ["family_id"], name: "index_products_on_family_id"
   end

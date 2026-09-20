@@ -225,7 +225,7 @@ class V2GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     assert_not GroceryItem.exists?(item.id)
   end
 
-  test "completed grocery rows reject quantity edits" do
+  test "completed grocery rows allow quantity corrections before checkout" do
     user = users(:john_smith)
     product = Product.create!(family: user.family, name: "Milk", aisle: :dairy_eggs, unit: :count)
     item = GroceryItem.create!(
@@ -243,8 +243,11 @@ class V2GroceryItemsControllerTest < ActionDispatch::IntegrationTest
       headers: auth_headers_for(user),
       as: :json
 
-    assert_response :unprocessable_entity
-    assert_equal 1.0, item.reload.quantity.to_f
+    assert_response :success
+    assert_equal "success", response.parsed_body["status"]
+    assert_equal 2.0, response.parsed_body.dig("data", "quantity")
+    assert_equal 2.0, item.reload.quantity.to_f
+    assert item.status_completed?
   end
 
   test "generate accepts checked product ids and creates product-backed grocery rows" do

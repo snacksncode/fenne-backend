@@ -12,6 +12,7 @@ module V2
         optional(:reminder_frequency_unit).maybe(:string, included_in?: %w[days weeks months])
         optional(:is_kitchen_basic).filled(:bool)
         optional(:impact_acknowledged).filled(:bool)
+        optional(:pack_sizes).value(:array, max_size?: 6).each(:float, gt?: 0, lteq?: 1_000_000)
         optional(:conversions).hash
       end
     end
@@ -25,6 +26,7 @@ module V2
         optional(:reminder_frequency_unit).maybe(:string, included_in?: %w[days weeks months])
         optional(:is_kitchen_basic).filled(:bool)
         optional(:impact_acknowledged).filled(:bool)
+        optional(:pack_sizes).value(:array, max_size?: 6).each(:float, gt?: 0, lteq?: 1_000_000)
         optional(:conversions).hash
       end
     end
@@ -33,6 +35,13 @@ module V2
       params do
         required(:q).filled(:string)
         optional(:id).filled(:integer)
+      end
+    end
+
+    class PurchaseSuggestionContract < Dry::Validation::Contract
+      params do
+        required(:needed).filled(:float, gteq?: 0, lteq?: 1_000_000_000)
+        required(:pantry).filled(:float, gteq?: 0, lteq?: 1_000_000_000)
       end
     end
 
@@ -46,6 +55,15 @@ module V2
 
     def usages
       render_success({ recipes: RecipeSerializer.render_many(product.recipes.includes(ingredients: :product).order(:name)) })
+    end
+
+    def purchase_suggestion
+      attrs = validate_params!(PurchaseSuggestionContract)
+      unless product.measured? || product.counted?
+        return render_error({ base: ["This item does not track pantry amounts."] })
+      end
+
+      render_success(PurchaseSuggestion.call(product: product, **attrs))
     end
 
     def create

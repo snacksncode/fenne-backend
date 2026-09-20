@@ -21,7 +21,8 @@ class ProductQuantityMigrator
       entry.update!(quantity_remaining: entry.quantity_remaining * multiplier)
     end
     product.grocery_items.find_each do |item|
-      item.update!(quantity: item.quantity * multiplier, unit: product.unit)
+      item.update!(quantity: item.quantity * multiplier, unit: product.unit,
+        needed_quantity: item.needed_quantity && item.needed_quantity * multiplier)
     end
   end
 

@@ -9,6 +9,7 @@ class ProductSerializer
       reminder_frequency_unit: product.reminder_frequency_unit,
       is_kitchen_basic: product.is_kitchen_basic,
       shape: product.shape.to_s,
+      pack_sizes: product.pack_sizes,
       conversions: product.conversions || {}
     }
   end

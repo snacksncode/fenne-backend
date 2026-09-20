@@ -13,6 +13,7 @@ module V2
         optional(:reminder_frequency_value).maybe(:integer, gt?: 0)
         optional(:reminder_frequency_unit).maybe(:string, included_in?: %w[days weeks months])
         optional(:is_kitchen_basic).filled(:bool)
+        optional(:pack_sizes).value(:array, max_size?: 6).each(:float, gt?: 0, lteq?: 1_000_000)
         optional(:conversions).hash
       end
 

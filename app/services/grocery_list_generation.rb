@@ -18,8 +18,14 @@ class GroceryListGeneration
 
     ApplicationRecord.transaction do
       product_needs.each do |product, needed|
-        quantity = ProductQuantity.quantity_after_pantry(product, needed)
-        next if quantity <= 0
+        quantity = product.measured? ? needed : ProductQuantity.quantity_after_pantry(product, needed)
+        chosen = purchase_override(product)
+        if !product.measured? && chosen != :unchanged && !chosen.nil?
+          next if product.counted? && chosen.zero?
+          raise ArgumentError, "Purchase quantity must be greater than 0" unless chosen > 0
+          quantity = chosen
+        end
+        next if quantity <= 0 && !product.measured?
 
         recipe_ids = selected_ingredients.select { |ingredient| ingredient.product_id == product.id }.map(&:recipe_id).uniq
         GroceryListEntryAdder.call(
@@ -27,7 +33,8 @@ class GroceryListGeneration
           product: product,
           quantity: quantity,
           source: "generated",
-          recipe_ids: recipe_ids
+          recipe_ids: recipe_ids,
+          purchase_override: purchase_override(product)
         )
       end
     end
@@ -59,21 +66,38 @@ class GroceryListGeneration
 
     needs.filter_map do |product, needed|
       quantity = ProductQuantity.quantity_after_pantry(product, needed)
-      next if quantity <= 0
+      next if quantity <= 0 && product.timed?
       next if product.shape == :timed && active_grocery_item_exists?(product)
 
+      existing = family.grocery_items.find_by(product: product)
+      purchase = if product.measured?
+        PurchaseSuggestion.call(product: product, needed: needed + (existing&.needed_quantity || 0))
+      elsif product.counted?
+        PurchaseSuggestion.call(product: product, needed: needed)
+      end
+      quantity = purchase[:suggested_quantity] if purchase
+      overridden = product.measured? && existing && (existing.quantity_overridden || existing.status_completed?)
+      quantity = existing.quantity.to_f if overridden && purchase
       recipe_ids = ingredients.select { |ingredient| ingredient.product_id == product.id }.map(&:recipe_id).uniq
+      recipe_ids |= existing.normalized_recipe_ids if product.measured? && existing
       recipes = family.recipes.where(id: recipe_ids).map { |recipe| { id: recipe.id.to_s, name: recipe.name } }
       {
         product_id: product.id.to_s,
         product: ProductSerializer.render(product),
         quantity: quantity.to_f,
+        purchase: purchase,
+        quantity_overridden: !!overridden,
         unit: product.unit,
         checked: product.shape != :timed,
         recipes: recipes,
         running_low: product.shape == :timed
       }
     end
+  end
+
+  def purchase_override(product)
+    entry = Array(selection[:purchase_quantities]).find { |row| row[:product_id].to_i == product.id }
+    entry ? entry[:quantity] : :unchanged
   end
 
   def scheduled_ingredients

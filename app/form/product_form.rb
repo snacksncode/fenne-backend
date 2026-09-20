@@ -3,7 +3,7 @@ class ProductForm
 
   attr_accessor :id, :family, :name, :aisle, :unit,
     :reminder_frequency_value, :reminder_frequency_unit, :is_kitchen_basic,
-    :conversions, :impact_acknowledged
+    :conversions, :impact_acknowledged, :pack_sizes
 
   attr_reader :target, :impact, :missing_conversions
 
@@ -22,6 +22,7 @@ class ProductForm
       previous_conversions = product.conversions.to_h
 
       assign_product(product)
+      normalize_pack_sizes!(product, previous_unit)
       normalize_conversions_for_unit_change!(product, previous_shape, previous_unit, previous_conversions)
       validate_update!(product, previous_shape, previous_unit) if product.persisted?
 
@@ -66,6 +67,7 @@ class ProductForm
   end
 
   def assign_product(product)
+    product.pack_sizes = pack_sizes if field_supplied?(:pack_sizes)
     product.name = name if field_supplied?(:name)
     product.aisle = aisle if field_supplied?(:aisle)
     product.unit = unit if field_supplied?(:unit)
@@ -73,6 +75,17 @@ class ProductForm
     product.reminder_frequency_unit = reminder_frequency_unit if field_supplied?(:reminder_frequency_unit)
     product.is_kitchen_basic = is_kitchen_basic if field_supplied?(:is_kitchen_basic)
     product.conversions = merged_conversions(product.conversions, conversions) if field_supplied?(:conversions)
+  end
+
+  def normalize_pack_sizes!(product, previous_unit)
+    unless product.measured?
+      product.pack_sizes = [] unless field_supplied?(:pack_sizes) && Array(pack_sizes).any?
+      return
+    end
+    return if field_supplied?(:pack_sizes) || previous_unit == product.unit
+
+    factor = Conversion.factor(previous_unit, product.unit)
+    product.pack_sizes = factor ? product.pack_sizes.map { |size| (size.to_d * factor.to_d).round(3).to_f } : []
   end
 
   def field_supplied?(field)

@@ -24,6 +24,7 @@ class Product < ApplicationRecord
     allow_nil: true
   validate :mutual_exclusivity
   validate :reminder_fields_pair
+  validate :valid_pack_sizes
 
   def shape
     return :kitchen_basic if kitchen_basic?
@@ -49,6 +50,16 @@ class Product < ApplicationRecord
   end
 
   private
+
+  def valid_pack_sizes
+    sizes = pack_sizes
+    unless sizes.is_a?(Array) && sizes.length <= 6 && sizes.all? { |n| n.is_a?(Numeric) && n.finite? && n > 0 && n <= 1_000_000 && (n.to_d * 1000).frac.zero? }
+      errors.add(:pack_sizes, "enter up to 6 positive sizes, with at most 3 decimal places")
+      return
+    end
+    errors.add(:pack_sizes, "use pack sizes only with measured stock") if sizes.any? && !measured?
+    errors.add(:pack_sizes, "each size must be different") if sizes.uniq.length != sizes.length
+  end
 
   def normalize_name
     self.name = name.to_s.strip

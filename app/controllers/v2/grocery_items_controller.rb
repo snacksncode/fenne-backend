@@ -10,6 +10,10 @@ module V2
         optional(:start_date).filled(:string)
         optional(:end_date).filled(:string)
         optional(:checked_product_ids).filled(:array).each(:integer)
+        optional(:purchase_quantities).array(:hash) do
+          required(:product_id).filled(:integer)
+          required(:quantity).maybe(:float, gteq?: 0)
+        end
       end
 
       rule(:start, :end, :start_date, :end_date) do
@@ -57,7 +61,8 @@ module V2
 
     class UpdateGroceryItemContract < Dry::Validation::Contract
       params do
-        optional(:quantity).filled(:float, gt?: 0)
+        optional(:quantity).filled(:float, gteq?: 0)
+        optional(:use_suggestion).filled(:bool)
         optional(:unit).filled(:string, included_in?: UNIT_TYPES)
         optional(:status).filled(:string, included_in?: GroceryItem.statuses.keys.map(&:to_s))
       end
@@ -95,11 +100,16 @@ module V2
     def update
       item = grocery_item
       attrs = grocery_item_update_params
-      if attrs[:quantity].present?
-        return render_error({ status: [ "completed rows cannot be quantity-edited" ] }) if item.status_completed?
-
-        validate_product_unit!(item.product, attrs[:unit]) if item.product
+      if attrs[:use_suggestion] == true
+        return render_error({ base: [ "No recipe requirement to calculate from" ] }) unless item.purchase_suggestion
+        item.quantity_overridden = false
+        item.quantity = item.purchase_suggestion[:suggested_quantity]
+      elsif attrs.key?(:quantity)
+        validate_product_unit!(item.product, attrs[:unit] || item.product.unit) if item.product
         item.quantity = attrs[:quantity]
+        item.quantity_overridden = true unless attrs[:status] == "completed" && !item.quantity_overridden
+      elsif attrs[:status] == "completed"
+        item.quantity = item.purchase_quantity
       end
       item.unit = attrs[:unit] if attrs[:unit].present? && item.product.nil?
       item.status = attrs[:status] if attrs[:status].present?
@@ -159,7 +169,14 @@ module V2
       ApplicationRecord.transaction do
         grocery_items.status_completed.detail.lock.each do |item|
           apply_checkout_item!(item)
-          item.destroy!
+          # Keep any uncovered demand visible after buying less than the recipes need.
+          item.product&.pantry_entries&.reset
+          suggestion = item.purchase_suggestion
+          if suggestion && suggestion[:shortage] > 0
+            item.update!(status: :pending, quantity_overridden: false, quantity: suggestion[:suggested_quantity])
+          else
+            item.destroy!
+          end
         end
       end
 
@@ -205,7 +222,7 @@ module V2
 
     def apply_checkout_item!(item)
       product = item.product
-      return if product.nil? || product.kitchen_basic?
+      return if product.nil? || product.kitchen_basic? || item.quantity.zero?
 
       add = PantryEntryWriter.new(
         family: @current_user.family,
