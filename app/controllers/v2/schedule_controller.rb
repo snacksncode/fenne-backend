@@ -11,14 +11,12 @@ module V2
         optional(:breakfast).maybe(MealSchema)
         optional(:lunch).maybe(MealSchema)
         optional(:dinner).maybe(MealSchema)
-        optional(:is_shopping_day).filled(:bool)
       end
 
       rule do
         next if values.key?(:breakfast) ||
           values.key?(:lunch) ||
-          values.key?(:dinner) ||
-          values.key?(:is_shopping_day)
+          values.key?(:dinner)
 
         base.failure("must include at least one schedule field")
       end
@@ -117,8 +115,7 @@ module V2
     def empty_schedule(date)
       ScheduleDay.new(
         date: date,
-        family: @current_user.family,
-        is_shopping_day: false
+        family: @current_user.family
       )
     end
 

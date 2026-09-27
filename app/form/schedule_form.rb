@@ -15,7 +15,6 @@ class ScheduleForm
       handle_meal(:breakfast, data[:breakfast]) if data.key?(:breakfast)
       handle_meal(:lunch, data[:lunch]) if data.key?(:lunch)
       handle_meal(:dinner, data[:dinner]) if data.key?(:dinner)
-      @schedule_day.update(is_shopping_day: data[:is_shopping_day]) if data.key?(:is_shopping_day)
     end
 
     true

@@ -4,8 +4,7 @@ class ScheduleDaySerializer
       date: day.date.to_s,
       breakfast: day.breakfast.present? ? ScheduleItemSerializer.render(day.breakfast) : nil,
       lunch: day.lunch.present? ? ScheduleItemSerializer.render(day.lunch) : nil,
-      dinner: day.dinner.present? ? ScheduleItemSerializer.render(day.dinner) : nil,
-      is_shopping_day: day.is_shopping_day
+      dinner: day.dinner.present? ? ScheduleItemSerializer.render(day.dinner) : nil
     }
   end
 

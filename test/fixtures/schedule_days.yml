@@ -4,20 +4,16 @@
 tomorrow:
   family: smith_family
   date: <%= Date.tomorrow %>
-  is_shopping_day: false
 
 tomorrow_plus_one:
   family: smith_family
   date: <%= Date.tomorrow + 1.day %>
-  is_shopping_day: false
 
 # Johnson Family - Schedule Days (relative to today)
 johnson_tomorrow:
   family: johnson_family
   date: <%= Date.tomorrow %>
-  is_shopping_day: false
 
 johnson_tomorrow_plus_one:
   family: johnson_family
   date: <%= Date.tomorrow + 1.day %>
-  is_shopping_day: false

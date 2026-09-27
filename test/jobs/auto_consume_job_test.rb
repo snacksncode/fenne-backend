@@ -10,7 +10,7 @@ class AutoConsumeJobTest < ActiveJob::TestCase
     PantryEntry.create!(family: family, product: product, quantity_remaining: 3, last_acquired: Time.current)
 
     local_now = Time.find_zone!("Europe/Warsaw").local(Date.current.year, Date.current.month, Date.current.day, 4)
-    schedule_day = ScheduleDay.create!(family: family, date: local_now.to_date - 1.day, is_shopping_day: false)
+    schedule_day = ScheduleDay.create!(family: family, date: local_now.to_date - 1.day)
     ScheduleItem.create!(schedule_day: schedule_day, kind: :recipe, meal_type: :breakfast, recipe: recipe)
 
     assert_difference("ConsumptionLog.count", 1) do

@@ -255,7 +255,7 @@ class V2GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     recipe = recipes(:scrambled_eggs_smith)
     product = Product.create!(family: user.family, name: "Eggs", aisle: :dairy_eggs, unit: :count)
     ingredients(:scrambled_eggs_eggs).update!(product: product)
-    schedule_day = ScheduleDay.create!(family: user.family, date: Date.current, is_shopping_day: false)
+    schedule_day = ScheduleDay.create!(family: user.family, date: Date.current)
     ScheduleItem.create!(schedule_day: schedule_day, kind: :recipe, meal_type: :breakfast, recipe: recipe)
 
     assert_difference("GroceryItem.count", 1) do
@@ -280,7 +280,7 @@ class V2GroceryItemsControllerTest < ActionDispatch::IntegrationTest
     recipe = Recipe.create!(family: user.family, name: "Beef Bowl", meal_types: [ :dinner ], time_in_minutes: 20)
     product = Product.create!(family: user.family, name: "Beef", aisle: :meat, unit: :g)
     recipe.ingredients.create!(product: product, quantity: 250, unit: :g)
-    schedule_day = ScheduleDay.create!(family: user.family, date: Date.current, is_shopping_day: false)
+    schedule_day = ScheduleDay.create!(family: user.family, date: Date.current)
     ScheduleItem.create!(schedule_day: schedule_day, kind: :recipe, meal_type: :dinner, recipe: recipe)
 
     post "/v2/grocery_items/generate",

@@ -137,10 +137,7 @@ export class DataGenerator {
       }
     }
 
-    return {
-      ...meals,
-      is_shopping_day: Math.random() > 0.8, // 20% chance of shopping day
-    };
+    return meals;
   }
 
   /**

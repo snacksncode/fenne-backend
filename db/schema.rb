@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_05_090000) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_27_170000) do
   create_table "consumption_logs", force: :cascade do |t|
     t.integer "family_id", null: false
     t.integer "meal_type", null: false
@@ -134,7 +134,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_05_090000) do
   create_table "schedule_days", force: :cascade do |t|
     t.integer "family_id", null: false
     t.date "date", null: false
-    t.boolean "is_shopping_day", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["family_id", "date"], name: "index_schedule_days_on_family_id_and_date", unique: true
