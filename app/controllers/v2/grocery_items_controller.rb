@@ -75,7 +75,8 @@ module V2
     end
 
     def index
-      items = grocery_items.detail
+      # Retain covered recipe demand for later generations, but only show purchases.
+      items = grocery_items.detail.select { |item| item.status_completed? || item.purchase_quantity.positive? }
       render_success(GroceryItemSerializer.render_many(items))
     end
 

@@ -6,7 +6,7 @@ class V2PurchasePlanningTest < ActionDispatch::IntegrationTest
     @product = Product.create!(family: @user.family, name: "Test Pesto", aisle: :pantry, unit: :g, pack_sizes: [190])
     @recipe = Recipe.create!(family: @user.family, name: "Pesto Pasta", meal_types: [:dinner], time_in_minutes: 10)
     @recipe.ingredients.create!(product: @product, quantity: 40, unit: :g)
-    day = ScheduleDay.create!(family: @user.family, date: Date.current, is_shopping_day: false)
+    day = ScheduleDay.create!(family: @user.family, date: Date.current)
     ScheduleItem.create!(schedule_day: day, kind: :recipe, meal_type: :dinner, recipe: @recipe)
     @dates = { start: Date.current.iso8601, end: Date.current.iso8601 }
   end
@@ -21,6 +21,53 @@ class V2PurchasePlanningTest < ActionDispatch::IntegrationTest
     get "/v2/grocery_items/#{item.id}", headers: auth_headers_for(@user)
     assert_response :success
     response.parsed_body.fetch("data")
+  end
+
+  test "pantry covered measured demand does not appear as a zero purchase on the grocery list" do
+    @product.update!(pack_sizes: [])
+    @recipe.ingredients.first.update!(quantity: 200)
+    PantryEntry.create!(family: @user.family, product: @product, quantity_remaining: 450, last_acquired: Time.current)
+    generate
+
+    get "/v2/grocery_items", headers: auth_headers_for(@user)
+    assert_response :success
+    assert_not response.parsed_body.fetch("data").any? { |row| row.dig("product", "id") == @product.id.to_s },
+      "A covered recipe must not leave an uncheckable 0 g purchase on the grocery list"
+
+    2.times { generate }
+    get "/v2/grocery_items", headers: auth_headers_for(@user)
+    row = response.parsed_body.fetch("data").find { |item| item.dig("product", "id") == @product.id.to_s }
+    assert_not_nil row, "Accumulated demand must still appear when it exceeds pantry stock"
+    assert_equal 150, row["quantity"]
+    assert_equal 600, row.dig("purchase", "needed")
+  end
+
+  test "grocery list uses current pantry while preserving explicit and checked purchases" do
+    item = generate
+    pantry = PantryEntry.create!(family: @user.family, product: @product, quantity_remaining: 100, last_acquired: Time.current)
+    get "/v2/grocery_items", headers: auth_headers_for(@user)
+    assert_not response.parsed_body.fetch("data").any? { |row| row["id"] == item.id.to_s }
+
+    pantry.update!(quantity_remaining: 0)
+    get "/v2/grocery_items", headers: auth_headers_for(@user)
+    assert response.parsed_body.fetch("data").any? { |row| row["id"] == item.id.to_s && row["quantity"] == 190 }
+
+    pantry.update!(quantity_remaining: 100)
+    item.update!(quantity: 120, quantity_overridden: true)
+    get "/v2/grocery_items", headers: auth_headers_for(@user)
+    assert response.parsed_body.fetch("data").any? { |row| row["id"] == item.id.to_s && row["quantity"] == 120 }
+
+    item.update!(quantity: 190, quantity_overridden: false, status: :completed)
+    get "/v2/grocery_items", headers: auth_headers_for(@user)
+    assert response.parsed_body.fetch("data").any? { |row| row["id"] == item.id.to_s && row["quantity"] == 190 }
+  end
+
+  test "direct recipe additions covered by pantry do not appear as zero purchases" do
+    PantryEntry.create!(family: @user.family, product: @product, quantity_remaining: 100, last_acquired: Time.current)
+    post "/v2/grocery_items/from_recipe", params: {recipe_id: @recipe.id}, headers: auth_headers_for(@user), as: :json
+    assert_response :created
+    get "/v2/grocery_items", headers: auth_headers_for(@user)
+    assert_not response.parsed_body.fetch("data").any? { |row| row.dig("product", "id") == @product.id.to_s }
   end
 
   test "repeated generation adds demand not rounded packs and GET uses current pantry" do
