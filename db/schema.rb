@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_27_170000) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_28_120000) do
   create_table "consumption_logs", force: :cascade do |t|
     t.integer "family_id", null: false
     t.integer "meal_type", null: false
@@ -200,8 +200,4 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_27_170000) do
   add_foreign_key "session_tokens", "users"
   add_foreign_key "todos", "users"
   add_foreign_key "users", "families"
-
-  # Virtual tables defined in this database.
-  # Note that virtual tables may not work with other database engines. Be careful if changing database.
-  create_virtual_table "product_search_entries", "fts5", ["source_type UNINDEXED", "source_id UNINDEXED", "family_id UNINDEXED", "name", "aisle UNINDEXED", "is_kitchen_basic UNINDEXED", "tokenize = 'unicode61'", "prefix = '2 3 4'"]
 end

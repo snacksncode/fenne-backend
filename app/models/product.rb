@@ -12,8 +12,6 @@ class Product < ApplicationRecord
 
   before_validation :normalize_name
   before_destroy :prevent_delete_if_referenced, prepend: true
-  after_commit :refresh_search_index, on: [ :create, :update ]
-  after_commit :remove_search_index, on: :destroy
 
   attr_reader :blocked_by_recipes
 
@@ -86,13 +84,5 @@ class Product < ApplicationRecord
     @blocked_by_recipes = recipes
     errors.add(:base, "product is used in recipes; remove it from those recipes first")
     throw :abort
-  end
-
-  def refresh_search_index
-    ProductSearchIndex.upsert_product(self)
-  end
-
-  def remove_search_index
-    ProductSearchIndex.delete("product", id)
   end
 end

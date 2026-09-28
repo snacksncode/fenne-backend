@@ -32,7 +32,7 @@ Rails.application.routes.draw do
         get :name_collision
       end
     end
-    resources :suggestions, only: [:index]
+    get "product_catalog", to: "product_catalog#index"
     resources :pantry_entries, only: [:index, :create, :update, :destroy]
     resources :consumption_logs, only: [:index, :create, :destroy]
 

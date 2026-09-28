@@ -1,14 +1,6 @@
 require "test_helper"
 
 class V2ContractErrorsTest < ActionDispatch::IntegrationTest
-  test "contract errors render through the v2 envelope" do
-    user = users(:john_smith)
-
-    get "/v2/suggestions", headers: auth_headers_for(user)
-
-    assert_contract_error(:unprocessable_entity, q: ["is missing"])
-  end
-
   test "auth contracts report invalid email format" do
     post "/v2/login",
       params: {email: "not-an-email", password: "secret"},
