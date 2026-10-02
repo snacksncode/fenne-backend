@@ -96,9 +96,11 @@ module V2
 
     def change_details
       data = change_details_params
-      @current_user.update!(name: data[:name]) if data[:name].present?
-      @current_user.update!(email: data[:email]) if data[:email].present?
-      render_success(UserSerializer.render(@current_user))
+      if @current_user.update(data)
+        render_success(UserSerializer.render(@current_user))
+      else
+        render_error(@current_user.errors)
+      end
     end
 
     def convert_guest

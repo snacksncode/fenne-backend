@@ -9,7 +9,13 @@ module ApplicationCable
     private
 
     def find_user_by_token!
-      SessionToken.find_by!(token: request.params[:token]).user
+      token = SessionToken.find_by!(token: request.params[:token])
+      if token.expired?
+        token.destroy!
+        reject_unauthorized_connection
+      end
+
+      token.user
     rescue ActiveRecord::RecordNotFound
       reject_unauthorized_connection
     end

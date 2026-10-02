@@ -30,4 +30,26 @@ class ApplicationCable::ConnectionTest < ActionCable::Connection::TestCase
 
     assert_equal user, connection.user
   end
+
+  test "rejects and removes an expired session token" do
+    token = users(:john_smith).session_tokens.first
+    token.update!(expires_at: 1.minute.ago)
+
+    assert_reject_connection do
+      connect "/v2/cable?token=#{token.token}"
+    end
+
+    assert_not SessionToken.exists?(token.id)
+  end
+
+  test "accepts a valid session token nearing expiration without changing its lifetime" do
+    token = users(:john_smith).session_tokens.first
+    token.update!(expires_at: 30.days.from_now)
+
+    expires_at = token.expires_at
+    connect "/v2/cable?token=#{token.token}"
+
+    assert_equal token.user, connection.user
+    assert_equal expires_at, token.reload.expires_at
+  end
 end

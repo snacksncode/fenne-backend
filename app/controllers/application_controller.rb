@@ -9,13 +9,10 @@ class ApplicationController < ActionController::API
     end
   end
 
-  class InvalidEmailError < StandardError; end
-
   before_action :authenticate_request!
   wrap_parameters false
   rescue_from ActiveRecord::RecordNotFound, with: :not_found!
   rescue_from ActiveRecord::RecordNotUnique, with: :conflict!
-  rescue_from InvalidEmailError, with: :invalid_email!
   rescue_from ActionController::ParameterMissing, with: :parameter_missing!
   rescue_from ValidationError, with: :validation_error!
 
@@ -29,32 +26,23 @@ class ApplicationController < ActionController::API
   end
 
   def unauthorized!
-    render_error({base: ["Unauthorized"]}, status: :unauthorized)
+    render_error({ base: [ "Unauthorized" ] }, status: :unauthorized)
   end
 
   def bad_request!(message = "Bad request")
-    render_error({base: [message]}, status: :bad_request)
+    render_error({ base: [ message ] }, status: :bad_request)
   end
 
   def unprocessable_entity!(errors)
     render_error(errors)
   end
 
-  def validate_email!(email)
-    is_valid = email.to_s.match?(URI::MailTo::EMAIL_REGEXP)
-    raise InvalidEmailError unless is_valid
-  end
-
   def not_found!
-    render_error({base: ["Not found"]}, status: :not_found)
+    render_error({ base: [ "Not found" ] }, status: :not_found)
   end
 
   def conflict!
-    render_error({base: ["conflict"]}, status: :conflict)
-  end
-
-  def invalid_email!
-    bad_request!("Email format invalid")
+    render_error({ base: [ "conflict" ] }, status: :conflict)
   end
 
   def parameter_missing!(exception)
@@ -77,5 +65,4 @@ class ApplicationController < ActionController::API
     _bearer, token = request.headers["Authorization"]&.split(" ")
     token
   end
-
 end
