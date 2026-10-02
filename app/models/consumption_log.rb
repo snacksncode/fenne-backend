@@ -11,11 +11,11 @@ class ConsumptionLog < ApplicationRecord
   def restore_pantry!
     @partial_restore_failed = false
     product_ids = deductions.map { |snapshot| snapshot.fetch("product_id") }.uniq
-    pantry_by_product = family.pantry_entries.where(product_id: product_ids).lock.index_by(&:product_id)
+    products_by_id = family.products.where(id: product_ids).index_by { |product| product.id.to_s }
 
     deductions.each do |snapshot|
       product_id = snapshot.fetch("product_id")
-      product = family.products.find_by(id: product_id)
+      product = products_by_id[product_id.to_s]
 
       unless product
         @partial_restore_failed = true
@@ -28,7 +28,7 @@ class ConsumptionLog < ApplicationRecord
         next
       end
 
-      writer = PantryEntryWriter.new(family: family, product: product, entry: pantry_by_product[product_id])
+      writer = PantryEntryWriter.new(family: family, product: product)
       unless writer.restore(quantity: add_back)
         @partial_restore_failed = true
         next
