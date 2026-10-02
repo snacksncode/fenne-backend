@@ -73,6 +73,7 @@ module V2
       end_date = parse_iso!(attrs[:end])
 
       schedule_days = @current_user.family.schedule_days.in_range(start_date, end_date)
+        .includes(schedule_items: { recipe: { ingredients: :product } })
       schedule_map = schedule_days.index_by(&:date)
       schedule = (start_date..end_date).map { |date| schedule_map[date] || empty_schedule(date) }
 

@@ -113,7 +113,9 @@ module V2
 
     def invalidate_recipe!(recipe)
       invalidate_recipes!
-      dates = ScheduleItem.where(recipe_id: recipe.id).map(&:schedule_day)
+      dates = @current_user.family.schedule_days.joins(:schedule_items)
+        .where(schedule_items: { recipe_id: recipe.id })
+        .order("schedule_items.id")
         .pluck(:date)
         .group_by { |d| [ d.cwyear, d.cweek ] }
         .values

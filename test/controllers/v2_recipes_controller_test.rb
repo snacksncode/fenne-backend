@@ -1,20 +1,22 @@
 require "test_helper"
 
 class V2RecipesControllerTest < ActionDispatch::IntegrationTest
+  include ActionCable::TestHelper
+
   test "recipe save can create product drafts atomically" do
     user = users(:john_smith)
 
-    assert_difference(["Recipe.count", "Product.count", "Ingredient.count"], 1) do
+    assert_difference([ "Recipe.count", "Product.count", "Ingredient.count" ], 1) do
       post "/v2/recipes",
         params: {
           name: "Rice Bowl",
-          meal_types: ["dinner"],
+          meal_types: [ "dinner" ],
           time_in_minutes: 20,
           ingredients: [
             {
               quantity: 150,
               unit: "g",
-              product: {name: "Rice", aisle: "pantry", unit: "g"}
+              product: { name: "Rice", aisle: "pantry", unit: "g" }
             }
           ]
         },
@@ -35,13 +37,13 @@ class V2RecipesControllerTest < ActionDispatch::IntegrationTest
     post "/v2/recipes",
       params: {
         name: "Rice Bowl",
-        meal_types: ["dinner"],
+        meal_types: [ "dinner" ],
         time_in_minutes: 20,
         ingredients: [
           {
             quantity: 150,
             unit: "g",
-            product: {id: product.id, name: "Better Rice"}
+            product: { id: product.id, name: "Better Rice" }
           }
         ]
       },
@@ -60,13 +62,13 @@ class V2RecipesControllerTest < ActionDispatch::IntegrationTest
     post "/v2/recipes",
       params: {
         name: "Toast",
-        meal_types: ["breakfast"],
+        meal_types: [ "breakfast" ],
         time_in_minutes: 5,
         ingredients: [
           {
             quantity: 1,
             unit: "tbsp",
-            product: {id: product.id, conversions: {tbsp: 14}}
+            product: { id: product.id, conversions: { tbsp: 14 } }
           }
         ]
       },
@@ -90,22 +92,22 @@ class V2RecipesControllerTest < ActionDispatch::IntegrationTest
     user = users(:john_smith)
     product = Product.create!(family: user.family, name: "Conversion Butter", aisle: :dairy_eggs, unit: :g)
 
-    assert_no_difference(["Recipe.count", "Product.count", "Ingredient.count"]) do
+    assert_no_difference([ "Recipe.count", "Product.count", "Ingredient.count" ]) do
       post "/v2/recipes",
         params: {
           name: "Conversion Test Recipe",
-          meal_types: ["breakfast"],
+          meal_types: [ "breakfast" ],
           time_in_minutes: 5,
           ingredients: [
             {
               quantity: 1,
               unit: "tbsp",
-              product: {id: product.id}
+              product: { id: product.id }
             },
             {
               quantity: 1,
               unit: "cup",
-              product: {name: "Conversion Flour", aisle: "spices_baking", unit: "g"}
+              product: { name: "Conversion Flour", aisle: "spices_baking", unit: "g" }
             }
           ]
         },
@@ -139,14 +141,14 @@ class V2RecipesControllerTest < ActionDispatch::IntegrationTest
     post "/v2/recipes",
       params: {
         name: "Custard",
-        meal_types: ["breakfast"],
+        meal_types: [ "breakfast" ],
         time_in_minutes: 15,
         ingredients: [
           {
             name_override: "Yolk",
             quantity: 2,
             unit: "count",
-            product: {id: product.id}
+            product: { id: product.id }
           }
         ]
       },
@@ -165,7 +167,7 @@ class V2RecipesControllerTest < ActionDispatch::IntegrationTest
             name_override: nil,
             quantity: 2,
             unit: "count",
-            product: {id: product.id}
+            product: { id: product.id }
           }
         ]
       },
@@ -183,12 +185,65 @@ class V2RecipesControllerTest < ActionDispatch::IntegrationTest
     original_ingredient_ids = recipe.ingredients.pluck(:id).sort
 
     patch "/v2/recipes/#{recipe.id}",
-      params: {notes: "Add chives at the end"},
+      params: { notes: "Add chives at the end" },
       headers: auth_headers_for(user),
       as: :json
 
     assert_response :success
     assert_equal "Add chives at the end", recipe.reload.notes
     assert_equal original_ingredient_ids, recipe.ingredients.pluck(:id).sort
+  end
+
+  test "recipe edits broadcast one representative per scheduled week nearest today first" do
+    user = users(:john_smith)
+    recipe = recipes(:scrambled_eggs_smith)
+    stream = "family_invalidation_stream_#{user.family_id}"
+    [ Date.new(2030, 1, 3), Date.new(2030, 1, 1), Date.new(2030, 1, 9) ].each do |date|
+      day = user.family.schedule_days.create!(date: date)
+      day.schedule_items.create!(kind: :recipe, meal_type: :breakfast, recipe: recipe)
+    end
+    other_family = families(:johnson_family)
+    other_day = other_family.schedule_days.create!(date: Date.new(2030, 1, 20))
+    other_day.schedule_items.create!(kind: :recipe, meal_type: :dinner, recipe: recipes(:grilled_salmon_johnson))
+    user.session_tokens.update_all(expires_at: Time.zone.local(2031, 1, 1))
+
+    travel_to Time.zone.local(2030, 1, 10, 12) do
+      assert_no_broadcasts("family_invalidation_stream_#{other_family.id}") do
+        messages = capture_broadcasts(stream) do
+          patch "/v2/recipes/#{recipe.id}", params: { notes: "Updated notes" }, headers: auth_headers_for(user), as: :json
+        end
+        assert_response :success
+        assert_equal [
+          { "resource" => "recipes", "data" => nil },
+          { "resource" => "schedules", "data" => { "dates" => [ "2030-01-09", "2030-01-03" ] } }
+        ], messages
+      end
+    end
+  end
+
+  test "deleting a scheduled recipe broadcasts the full schedule fallback after removing its meals" do
+    user = users(:john_smith)
+    recipe = recipes(:scrambled_eggs_smith)
+    day = user.family.schedule_days.create!(date: Date.new(2030, 1, 1))
+    day.schedule_items.create!(kind: :recipe, meal_type: :breakfast, recipe: recipe)
+
+    messages = capture_broadcasts("family_invalidation_stream_#{user.family_id}") do
+      delete "/v2/recipes/#{recipe.id}", headers: auth_headers_for(user), as: :json
+    end
+
+    assert_response :success
+    assert_empty day.schedule_items.reload
+    assert_equal [
+      { "resource" => "recipes", "data" => nil },
+      { "resource" => "schedules", "data" => nil }
+    ], messages
+  end
+
+  test "invalid recipe edits do not broadcast changes" do
+    user = users(:john_smith)
+    assert_no_broadcasts("family_invalidation_stream_#{user.family_id}") do
+      patch "/v2/recipes/#{recipes(:scrambled_eggs_smith).id}", params: { name: "" }, headers: auth_headers_for(user), as: :json
+    end
+    assert_response :unprocessable_entity
   end
 end
