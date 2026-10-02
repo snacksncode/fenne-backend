@@ -24,17 +24,15 @@ module V2
       return render_error({ base: [ "User already in your family" ] }, status: :bad_request) unless user.family.id != @current_user.family.id
       return render_error({ base: [ "User already invited" ] }, status: :bad_request) if @current_user.sent_invitations.find_by(to_user: user).present?
 
-      @current_user.sent_invitations.create!(to_user: user, family: @current_user.family)
-      invalidate_invitations!(@current_user.family)
-      invalidate_invitations!(user.family)
+      invite = @current_user.sent_invitations.create!(to_user: user, family: @current_user.family)
+      invalidate_invitation_participants!(invite)
       render_success
     end
 
     def destroy
       invite = get_sent_invite
       invite.destroy!
-      invalidate_invitations!(@current_user.family)
-      invalidate_invitations!(invite.from_user.family)
+      invalidate_invitation_participants!(invite)
       render_success
     end
 
@@ -42,7 +40,9 @@ module V2
       return render_error({ base: [ "cannot leave family" ] }, status: :bad_request) if @current_user.family.users.size == 1
 
       previous_family = @current_user.family
-      @current_user.update!(family: Family.create!)
+      ApplicationRecord.transaction do
+        @current_user.update!(family: Family.create!)
+      end
       invalidate_invitations!(previous_family)
       invalidate_family_members!(previous_family)
       invalidate_family_members!(@current_user.family)
@@ -52,11 +52,14 @@ module V2
     def accept
       previous_family = @current_user.family
       invite = get_received_invite
-      @current_user.update!(family: invite.family)
-      invite.destroy!
+      ApplicationRecord.transaction do
+        @current_user.update!(family: invite.family)
+        invite.destroy!
+      end
 
-      [ previous_family, invite.family ].each do |family|
-        invalidate_invitations!(family)
+      affected_families = [ previous_family, invite.family ].uniq(&:id)
+      invalidate_invitation_participants!(invite, additional_families: affected_families)
+      affected_families.each do |family|
         invalidate_family_members!(family)
       end
 
@@ -66,11 +69,18 @@ module V2
     def decline
       invite = get_received_invite
       invite.destroy!
-      invalidate_invitations!(@current_user.family)
+      invalidate_invitation_participants!(invite)
       render_success
     end
 
     private
+
+    def invalidate_invitation_participants!(invite, additional_families: [])
+      # Participants may have moved since the invitation was sent or accepted.
+      family_ids = User.where(id: [ invite.from_user_id, invite.to_user_id ]).pluck(:family_id)
+      family_ids.concat(additional_families.map(&:id))
+      Family.where(id: family_ids.uniq).each { |family| invalidate_invitations!(family) }
+    end
 
     def get_received_invite
       @current_user.received_invitations.find(params[:invitation_id])
