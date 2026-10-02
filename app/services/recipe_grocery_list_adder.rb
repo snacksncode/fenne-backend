@@ -13,7 +13,7 @@ class RecipeGroceryListAdder
       product_needs.each do |product, quantity|
         next if quantity <= 0
 
-        GroceryListEntryAdder.call(
+        GroceryItem.add_product!(
           family: family,
           product: product,
           quantity: quantity,

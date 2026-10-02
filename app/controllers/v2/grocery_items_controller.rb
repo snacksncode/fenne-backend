@@ -100,22 +100,7 @@ module V2
 
     def update
       item = grocery_item
-      attrs = grocery_item_update_params
-      if attrs[:use_suggestion] == true
-        return render_error({ base: [ "No recipe requirement to calculate from" ] }) unless item.purchase_suggestion
-        item.quantity_overridden = false
-        item.quantity = item.purchase_suggestion[:suggested_quantity]
-      elsif attrs.key?(:quantity)
-        validate_product_unit!(item.product, attrs[:unit] || item.product.unit) if item.product
-        item.quantity = attrs[:quantity]
-        item.quantity_overridden = true unless attrs[:status] == "completed" && !item.quantity_overridden
-      elsif attrs[:status] == "completed"
-        item.quantity = item.purchase_quantity
-      end
-      item.unit = attrs[:unit] if attrs[:unit].present? && item.product.nil?
-      item.status = attrs[:status] if attrs[:status].present?
-
-      if item.save
+      if item.update_purchase(grocery_item_update_params)
         invalidate_groceries!
         render_success(GroceryItemSerializer.render(item))
       else
@@ -167,19 +152,7 @@ module V2
     end
 
     def checkout
-      ApplicationRecord.transaction do
-        grocery_items.status_completed.detail.lock.each do |item|
-          apply_checkout_item!(item)
-          # Keep any uncovered demand visible after buying less than the recipes need.
-          item.product&.pantry_entries&.reset
-          suggestion = item.purchase_suggestion
-          if suggestion && suggestion[:shortage] > 0
-            item.update!(status: :pending, quantity_overridden: false, quantity: suggestion[:suggested_quantity])
-          else
-            item.destroy!
-          end
-        end
-      end
+      GroceryListCheckout.call(family: @current_user.family)
 
       invalidate_groceries!
       invalidate_pantry!
@@ -221,21 +194,10 @@ module V2
       )
     end
 
-    def apply_checkout_item!(item)
-      product = item.product
-      return if product.nil? || product.kitchen_basic? || item.quantity.zero?
-
-      add = PantryEntryWriter.new(
-        family: @current_user.family,
-        product: product
-      )
-      raise ArgumentError, add.errors.full_messages.to_sentence unless add.add(quantity_remaining: item.quantity)
-    end
-
     def create_product_backed_item(attrs)
       product = @current_user.family.products.find(attrs[:product_id])
       validate_product_unit!(product, attrs[:unit])
-      GroceryListEntryAdder.call(
+      GroceryItem.add_product!(
         family: @current_user.family,
         product: product,
         quantity: attrs[:quantity],
