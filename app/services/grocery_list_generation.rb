@@ -14,11 +14,12 @@ class GroceryListGeneration
   end
 
   def generate!
-    product_needs, selected_ingredients = selected_product_needs
+    selected_ids = Array(selection[:checked_product_ids]).map(&:to_i)
+    plan = product_plan(selected_ids: selected_ids)
 
     ApplicationRecord.transaction do
-      product_needs.each do |product, needed|
-        quantity = product.measured? ? needed : ProductQuantity.quantity_after_pantry(product, needed)
+      plan.each do |product, demand|
+        quantity = product.measured? ? demand[:needed] : ProductQuantity.quantity_after_pantry(product, demand[:needed])
         chosen = purchase_override(product)
         if !product.measured? && chosen != :unchanged && !chosen.nil?
           next if product.counted? && chosen.zero?
@@ -27,14 +28,13 @@ class GroceryListGeneration
         end
         next if quantity <= 0 && !product.measured?
 
-        recipe_ids = selected_ingredients.select { |ingredient| ingredient.product_id == product.id }.map(&:recipe_id).uniq
-        GroceryListEntryAdder.call(
+        GroceryItem.add_product!(
           family: family,
           product: product,
           quantity: quantity,
           source: "generated",
-          recipe_ids: recipe_ids,
-          purchase_override: purchase_override(product)
+          recipe_ids: demand[:recipe_ids],
+          purchase_override: chosen
         )
       end
     end
@@ -44,55 +44,74 @@ class GroceryListGeneration
 
   attr_reader :family, :start_date, :end_date, :selection
 
-  def selected_product_needs
-    all = scheduled_ingredients.reject { |ingredient| ingredient.product.kitchen_basic? }
+  # Keep exact Recipe demand and attribution together, before Pantry subtraction
+  # or Pack Size rounding. Selection happens first so unchecked Products need no
+  # Conversion and cannot prevent accepted Products from being generated.
+  def product_plan(selected_ids: nil)
+    ingredients = scheduled_items.flat_map { |item| item.recipe.ingredients }
+      .reject { |ingredient| ingredient.product.kitchen_basic? }
+    ingredients.select! { |ingredient| selected_ids.include?(ingredient.product_id) } if selected_ids
 
-    checked_product_ids = Array(selection[:checked_product_ids]).map(&:to_i)
-    selected_ingredients = all.select { |ingredient| checked_product_ids.include?(ingredient.product_id) }
-    needs = group_needs_by_product(selected_ingredients)
-    running_low_timed_products.each do |product|
-      needs[product] ||= 1.to_d if checked_product_ids.include?(product.id)
+    plan = ingredients.group_by(&:product).transform_values do |group|
+      {
+        needed: group.sum { |ingredient| ProductQuantity.ingredient_need(ingredient) },
+        recipe_ids: group.map(&:recipe_id).uniq
+      }
     end
+    running_low_timed_products.each do |product|
+      next if selected_ids && !selected_ids.include?(product.id)
 
-    [ needs, selected_ingredients ]
+      plan[product] ||= { needed: 1.to_d, recipe_ids: [] }
+    end
+    plan
   end
 
   def product_preview_rows
-    ingredients = scheduled_ingredients
-      .reject { |ingredient| ingredient.product.kitchen_basic? }
+    plan = product_plan
+    existing_items = family.grocery_items.where(product_id: plan.keys.map(&:id)).index_by(&:product_id)
+    recipe_ids = plan.values.flat_map { |demand| demand[:recipe_ids] }
+    recipe_ids |= existing_items.values.flat_map(&:normalized_recipe_ids)
+    recipes_by_id = family.recipes.where(id: recipe_ids).index_by(&:id)
 
-    needs = group_needs_by_product(ingredients)
-    running_low_timed_products.each { |product| needs[product] ||= 1.to_d }
+    plan.filter_map do |product, demand|
+      existing = existing_items[product.id]
+      next if product.timed? && existing
 
-    needs.filter_map do |product, needed|
-      quantity = ProductQuantity.quantity_after_pantry(product, needed)
-      next if quantity <= 0 && product.timed?
-      next if product.shape == :timed && active_grocery_item_exists?(product)
-
-      existing = family.grocery_items.find_by(product: product)
-      purchase = if product.measured?
-        PurchaseSuggestion.call(product: product, needed: needed + (existing&.needed_quantity || 0))
-      elsif product.counted?
-        PurchaseSuggestion.call(product: product, needed: needed)
-      end
-      quantity = purchase[:suggested_quantity] if purchase
-      overridden = product.measured? && existing && (existing.quantity_overridden || existing.status_completed?)
-      quantity = existing.quantity.to_f if overridden && purchase
-      recipe_ids = ingredients.select { |ingredient| ingredient.product_id == product.id }.map(&:recipe_id).uniq
-      recipe_ids |= existing.normalized_recipe_ids if product.measured? && existing
-      recipes = family.recipes.where(id: recipe_ids).map { |recipe| { id: recipe.id.to_s, name: recipe.name } }
-      {
-        product_id: product.id.to_s,
-        product: ProductSerializer.render(product),
-        quantity: quantity.to_f,
-        purchase: purchase,
-        quantity_overridden: !!overridden,
-        unit: product.unit,
-        checked: product.shape != :timed,
-        recipes: recipes,
-        running_low: product.shape == :timed
-      }
+      preview_row(product, demand, existing, recipes_by_id)
     end
+  end
+
+  def preview_row(product, demand, existing, recipes_by_id)
+    needed = demand[:needed]
+    quantity = ProductQuantity.quantity_after_pantry(product, needed)
+    return if quantity <= 0 && product.timed?
+
+    purchase = if product.measured?
+      PurchaseSuggestion.call(product: product, needed: needed + (existing&.needed_quantity || 0))
+    elsif product.counted?
+      PurchaseSuggestion.call(product: product, needed: needed)
+    end
+    overridden = product.measured? && existing&.purchase_fixed?
+    quantity = purchase[:suggested_quantity] if purchase
+    quantity = existing.quantity if overridden && purchase
+
+    recipe_ids = demand[:recipe_ids]
+    recipe_ids |= existing.normalized_recipe_ids if product.measured? && existing
+    recipes = recipe_ids.filter_map do |id|
+      recipe = recipes_by_id[id]
+      { id: recipe.id.to_s, name: recipe.name } if recipe
+    end
+    {
+      product_id: product.id.to_s,
+      product: ProductSerializer.render(product),
+      quantity: quantity.to_f,
+      purchase: purchase,
+      quantity_overridden: !!overridden,
+      unit: product.unit,
+      checked: !product.timed?,
+      recipes: recipes,
+      running_low: product.timed?
+    }
   end
 
   def purchase_override(product)
@@ -100,22 +119,12 @@ class GroceryListGeneration
     entry ? entry[:quantity] : :unchanged
   end
 
-  def scheduled_ingredients
-    scheduled_items.flat_map { |item| item.recipe.ingredients }
-  end
-
   def scheduled_items
     @scheduled_items ||= begin
       schedule_day_ids = family.schedule_days.in_range(start_date, end_date).pluck(:id)
       ScheduleItem.where(schedule_day_id: schedule_day_ids)
         .kind_recipe
-        .includes(recipe: { ingredients: :product })
-    end
-  end
-
-  def group_needs_by_product(ingredients)
-    ingredients.group_by(&:product).transform_values do |group|
-      group.sum { |ingredient| ProductQuantity.ingredient_need(ingredient) }
+        .includes(recipe: { ingredients: { product: :pantry_entries } })
     end
   end
 
@@ -126,9 +135,5 @@ class GroceryListGeneration
       .where.not(reminder_frequency_unit: nil)
       .includes(:pantry_entries)
       .select { |product| ProductQuantity.running_low?(product) }
-  end
-
-  def active_grocery_item_exists?(product)
-    family.grocery_items.where(product: product).where(status: [ :pending, :completed ]).exists?
   end
 end

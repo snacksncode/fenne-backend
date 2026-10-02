@@ -30,7 +30,7 @@ class ProductQuantity
     when :counted
       ingredient.unit_count? ? ingredient.quantity.to_d : 1.to_d
     when :measured
-      measured_need(ingredient.quantity.to_d, ingredient.unit, allow_conversions: true)
+      measured_need(ingredient.quantity.to_d, ingredient.unit)
     when :timed
       running_low? ? 1.to_d : 0.to_d
     end
@@ -64,10 +64,9 @@ class ProductQuantity
 
   attr_reader :product
 
-  def measured_need(quantity, unit, allow_conversions:)
+  def measured_need(quantity, unit)
     factor = Conversion.factor(unit, product.unit)
     return quantity * BigDecimal(factor.to_s) if factor
-    raise ArgumentError, "incompatible unit" unless allow_conversions
 
     conversion = product.conversions.to_h[unit.to_s]
     raise ArgumentError, "missing conversion for #{unit}" if conversion.blank?

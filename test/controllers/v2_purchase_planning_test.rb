@@ -259,4 +259,65 @@ class V2PurchasePlanningTest < ActionDispatch::IntegrationTest
     assert_equal 190, item.reload.quantity
   end
 
+  test "new Generation demand leaves checked purchases frozen until reopened" do
+    item = generate
+    patch "/v2/grocery_items/#{item.id}", params: { status: "completed" }, headers: auth_headers_for(@user), as: :json
+    assert_response :success
+    @recipe.ingredients.first.update!(quantity: 200)
+
+    generate
+
+    assert_equal 240, item.reload.needed_quantity
+    assert item.status_completed?
+    assert_not item.quantity_overridden
+    assert_equal 190, read_item(item)["quantity"]
+    get "/v2/grocery_items/preview", params: @dates, headers: auth_headers_for(@user)
+    row = response.parsed_body.dig("data", "products").find { |product| product["product_id"] == @product.id.to_s }
+    assert_equal 190, row["quantity"]
+    assert_equal true, row["quantity_overridden"]
+
+    patch "/v2/grocery_items/#{item.id}", params: { status: "pending" }, headers: auth_headers_for(@user), as: :json
+    assert_response :success
+    assert_equal 380, response.parsed_body.dig("data", "quantity")
+  end
+
+  test "Generation calculates only selected Products and excludes Kitchen Basics" do
+    missing_conversion = @user.family.products.create!(name: "Unselected cream", aisle: :dairy_eggs, unit: :g)
+    basic = @user.family.products.create!(name: "Assumed salt", aisle: :pantry, unit: :count, is_kitchen_basic: true)
+    @recipe.ingredients.create!(product: missing_conversion, quantity: 1, unit: :tbsp)
+    @recipe.ingredients.create!(product: basic, quantity: 1, unit: :count)
+
+    item = generate(checked_product_ids: [ @product.id, basic.id ])
+
+    assert_equal 40, item.needed_quantity
+    assert_nil GroceryItem.find_by(product: missing_conversion)
+    assert_nil GroceryItem.find_by(product: basic)
+  end
+
+  test "a Recipe scheduled twice adds both requirements while attributing it once" do
+    day = @user.family.schedule_days.find_by!(date: Date.current)
+    ScheduleItem.create!(schedule_day: day, kind: :recipe, meal_type: :lunch, recipe: @recipe)
+
+    item = generate
+
+    assert_equal 80, item.needed_quantity
+    assert_equal [ @recipe.id ], item.recipe_ids
+    generate
+    assert_equal 160, item.reload.needed_quantity
+    assert_equal 190, read_item(item)["quantity"]
+  end
+
+  test "use suggestion without a Recipe requirement keeps the structured error response" do
+    post "/v2/grocery_items", params: { type: "product", product_id: @product.id, quantity: 20, unit: "g" }, headers: auth_headers_for(@user), as: :json
+    assert_response :created
+    item_id = response.parsed_body.dig("data", "id")
+
+    patch "/v2/grocery_items/#{item_id}", params: { use_suggestion: true }, headers: auth_headers_for(@user), as: :json
+
+    assert_response :unprocessable_entity
+    assert_equal "error", response.parsed_body["status"]
+    assert_equal [ "No recipe requirement to calculate from" ], response.parsed_body.dig("errors", "base")
+    assert_equal 20, GroceryItem.find(item_id).quantity
+  end
+
 end
