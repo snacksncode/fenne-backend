@@ -5,21 +5,21 @@ class RecipeTest < ActiveSupport::TestCase
     recipe = recipes(:pasta_carbonara_smith)
     recipe.update!(meal_types_bitmask: 1)
 
-    assert_equal [:breakfast], recipe.meal_types
+    assert_equal [ :breakfast ], recipe.meal_types
   end
 
   test "meal_types handles multiple meal types" do
     recipe = recipes(:pasta_carbonara_smith)
     recipe.update!(meal_types_bitmask: 3)
 
-    assert_equal [:breakfast, :lunch], recipe.meal_types
+    assert_equal [ :breakfast, :lunch ], recipe.meal_types
   end
 
   test "meal_types handles all meal types" do
     recipe = recipes(:pasta_carbonara_smith)
     recipe.update!(meal_types_bitmask: 7)
 
-    assert_equal [:breakfast, :lunch, :dinner], recipe.meal_types
+    assert_equal [ :breakfast, :lunch, :dinner ], recipe.meal_types
   end
 
   test "meal_types= converts array to bitmask for single type" do
@@ -28,7 +28,7 @@ class RecipeTest < ActiveSupport::TestCase
       name: "Test Recipe",
       time_in_minutes: 30
     )
-    recipe.meal_types = [:breakfast]
+    recipe.meal_types = [ :breakfast ]
 
     assert_equal 1, recipe.meal_types_bitmask
   end
@@ -39,7 +39,7 @@ class RecipeTest < ActiveSupport::TestCase
       name: "Test Recipe",
       time_in_minutes: 30
     )
-    recipe.meal_types = [:breakfast, :lunch]
+    recipe.meal_types = [ :breakfast, :lunch ]
 
     assert_equal 3, recipe.meal_types_bitmask
   end
@@ -50,7 +50,7 @@ class RecipeTest < ActiveSupport::TestCase
       name: "Test Recipe",
       time_in_minutes: 30
     )
-    recipe.meal_types = [:breakfast, :lunch, :dinner]
+    recipe.meal_types = [ :breakfast, :lunch, :dinner ]
 
     assert_equal 7, recipe.meal_types_bitmask
   end
@@ -61,9 +61,18 @@ class RecipeTest < ActiveSupport::TestCase
       name: "Test Recipe",
       time_in_minutes: 30
     )
-    recipe.meal_types = ["breakfast", "dinner"]
+    recipe.meal_types = [ "breakfast", "dinner" ]
 
     assert_equal 5, recipe.meal_types_bitmask
+  end
+
+  test "repeated meal types do not turn into other selections or overflow the bitmask" do
+    recipe = recipes(:scrambled_eggs_smith)
+
+    [ [ :breakfast ], [ :lunch ], [ :dinner ], [ :breakfast, :lunch, :dinner ] ].each do |types|
+      recipe.update!(meal_types: types + types.map(&:to_s))
+      assert_equal types, recipe.reload.meal_types
+    end
   end
 
   test "meal_types= raises error if not an array" do
@@ -93,7 +102,7 @@ class RecipeTest < ActiveSupport::TestCase
     recipe = Recipe.new(
       family: families(:smith_family),
       name: "Test Recipe",
-      meal_types: [:breakfast],
+      meal_types: [ :breakfast ],
       time_in_minutes: nil
     )
 
@@ -105,7 +114,7 @@ class RecipeTest < ActiveSupport::TestCase
     recipe = Recipe.new(
       family: families(:smith_family),
       name: "Test Recipe",
-      meal_types: [:breakfast],
+      meal_types: [ :breakfast ],
       time_in_minutes: 30,
       liked: nil
     )
@@ -130,7 +139,7 @@ class RecipeTest < ActiveSupport::TestCase
     recipe = Recipe.new(
       family: families(:smith_family),
       name: "Test Recipe",
-      meal_types: [:breakfast],
+      meal_types: [ :breakfast ],
       time_in_minutes: 0
     )
 

@@ -13,7 +13,7 @@ class Recipe < ApplicationRecord
 
   def meal_types=(types)
     raise ArgumentError unless types.is_a?(Array)
-    self.meal_types_bitmask = types.map { |t| MEAL_TYPES[t.to_sym] }.compact.sum
+    self.meal_types_bitmask = types.map { |t| MEAL_TYPES[t.to_sym] }.compact.uniq.sum
   end
 
   validates :name, :meal_types, :time_in_minutes, presence: true

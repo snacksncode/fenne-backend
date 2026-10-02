@@ -246,4 +246,62 @@ class V2RecipesControllerTest < ActionDispatch::IntegrationTest
     end
     assert_response :unprocessable_entity
   end
+
+  test "recipe creation treats repeated meal types as one selection" do
+    user = users(:john_smith)
+    ingredient = recipes(:scrambled_eggs_smith).ingredients.first
+
+    post "/v2/recipes", params: {
+      name: "Breakfast twice",
+      meal_types: [ "breakfast", "breakfast" ],
+      time_in_minutes: 10,
+      ingredients: [ { quantity: 1, unit: ingredient.unit, product: { id: ingredient.product_id } } ]
+    }, headers: auth_headers_for(user), as: :json
+
+    assert_response :created
+    assert_equal "success", response.parsed_body.fetch("status")
+    assert_equal [ "breakfast" ], response.parsed_body.dig("data", "meal_types")
+    saved = user.family.recipes.find(response.parsed_body.dig("data", "id"))
+    assert_equal [ :breakfast ], saved.meal_types
+  end
+
+  test "recipe edits preserve selected meal types when a selection is repeated" do
+    user = users(:john_smith)
+    recipe = recipes(:scrambled_eggs_smith)
+
+    patch "/v2/recipes/#{recipe.id}", params: {
+      meal_types: [ "lunch", "lunch" ]
+    }, headers: auth_headers_for(user), as: :json
+
+    assert_response :success
+    assert_equal [ "lunch" ], response.parsed_body.dig("data", "meal_types")
+    assert_equal [ :lunch ], recipe.reload.meal_types
+  end
+
+  test "empty or unknown meal types remain invalid for recipe creation and edits" do
+    user = users(:john_smith)
+    recipe = recipes(:scrambled_eggs_smith)
+    ingredient = recipe.ingredients.first
+    original_types = recipe.meal_types
+
+    [ [], [ "snack" ], [ "breakfast", "snack" ] ].each do |meal_types|
+      assert_no_difference "Recipe.count" do
+        post "/v2/recipes", params: {
+          name: "Invalid meal types",
+          meal_types: meal_types,
+          time_in_minutes: 10,
+          ingredients: [ { quantity: 1, unit: ingredient.unit, product: { id: ingredient.product_id } } ]
+        }, headers: auth_headers_for(user), as: :json
+      end
+      assert_response :unprocessable_entity
+      assert_equal "error", response.parsed_body.fetch("status")
+      assert response.parsed_body.fetch("errors").key?("meal_types")
+
+      patch "/v2/recipes/#{recipe.id}", params: { meal_types: meal_types }, headers: auth_headers_for(user), as: :json
+      assert_response :unprocessable_entity
+      assert_equal "error", response.parsed_body.fetch("status")
+      assert response.parsed_body.fetch("errors").key?("meal_types")
+      assert_equal original_types, recipe.reload.meal_types
+    end
+  end
 end
