@@ -4,6 +4,8 @@ class ScheduleForm
 
   attr_accessor :user, :date, :data
 
+  MEAL_TYPES = %i[breakfast lunch dinner].freeze
+
   validates :user, :date, :data, presence: true
   validate :validate_meals
 
@@ -12,9 +14,9 @@ class ScheduleForm
 
     ActiveRecord::Base.transaction do
       @schedule_day = user.family.schedule_days.find_or_create_by(date:)
-      handle_meal(:breakfast, data[:breakfast]) if data.key?(:breakfast)
-      handle_meal(:lunch, data[:lunch]) if data.key?(:lunch)
-      handle_meal(:dinner, data[:dinner]) if data.key?(:dinner)
+      MEAL_TYPES.each do |meal_type|
+        handle_meal(meal_type, data[meal_type]) if data.key?(meal_type)
+      end
     end
 
     true
@@ -38,19 +40,11 @@ class ScheduleForm
   end
 
   def validate_meals
-    breakfast = data[:breakfast]
-    lunch = data[:lunch]
-    dinner = data[:dinner]
-    if breakfast.present? && data[:breakfast][:type] == "recipe" && !recipe_available?(breakfast[:recipe_id])
-      errors.add(:breakfast, "recipe does not exist")
-    end
-
-    if lunch.present? && lunch[:type] == "recipe" && !recipe_available?(lunch[:recipe_id])
-      errors.add(:lunch, "recipe does not exist")
-    end
-
-    if dinner.present? && dinner[:type] == "recipe" && !recipe_available?(dinner[:recipe_id])
-      errors.add(:dinner, "recipe does not exist")
+    MEAL_TYPES.each do |meal_type|
+      meal = data[meal_type]
+      if meal.present? && meal[:type] == "recipe" && !recipe_available?(meal[:recipe_id])
+        errors.add(meal_type, "recipe does not exist")
+      end
     end
   end
 

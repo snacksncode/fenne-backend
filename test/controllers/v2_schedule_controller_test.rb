@@ -30,4 +30,28 @@ class V2ScheduleControllerTest < ActionDispatch::IntegrationTest
       assert_response :unprocessable_entity
     end
   end
+
+  test "partial changes preserve other meals and validate every submitted recipe through the Family" do
+    put "/v2/schedule/#{@date}", params: {
+      breakfast: { type: "recipe", recipe_id: recipes(:scrambled_eggs_smith).id.to_s },
+      lunch: { type: "dining_out", name: "Lunch out" }
+    }, headers: auth_headers_for(@user), as: :json
+    assert_response :success
+
+    put "/v2/schedule/#{@date}", params: { lunch: nil }, headers: auth_headers_for(@user), as: :json
+    assert_response :success
+    assert_not_nil response.parsed_body.dig("data", "breakfast")
+    assert_nil response.parsed_body.dig("data", "lunch")
+
+    other_recipe = families(:johnson_family).recipes.create!(name: "Other dinner", meal_types: [ :dinner ], time_in_minutes: 10)
+    put "/v2/schedule/#{@date}", params: {
+      breakfast: { type: "recipe", recipe_id: other_recipe.id.to_s },
+      lunch: { type: "recipe", recipe_id: other_recipe.id.to_s },
+      dinner: { type: "recipe", recipe_id: other_recipe.id.to_s }
+    }, headers: auth_headers_for(@user), as: :json
+    assert_response :unprocessable_entity
+    %w[breakfast lunch dinner].each do |meal_type|
+      assert_equal [ "#{meal_type.capitalize} recipe does not exist" ], response.parsed_body.dig("errors", meal_type)
+    end
+  end
 end
