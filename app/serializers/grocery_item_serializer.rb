@@ -1,7 +1,7 @@
 class GroceryItemSerializer
-  def self.render(grocery_item, recipes_by_id: {})
+  def self.render(grocery_item, recipes_by_id: nil)
     product = grocery_item.product
-    recipes_by_id = grocery_item.recipes.index_by(&:id) if recipes_by_id.empty?
+    recipes_by_id ||= grocery_item.recipes.index_by(&:id)
     recipe_ids = grocery_item.normalized_recipe_ids
     recipes = recipe_ids.map do |id|
       recipe = recipes_by_id[id]
